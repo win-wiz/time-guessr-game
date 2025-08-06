@@ -72,12 +72,14 @@ const fallbackEvents = [
 
 export async function GET(request: Request) {
   try {
+    debugger
     const { searchParams } = new URL(request.url);
     const count = parseInt(searchParams.get('count') || '5');
-    
+    debugger
     try {
       // 首先尝试从第三方API获取数据
       const events = await fetchEventsFromAPI(count);
+      console.log('Fetched events from API:', events);
       return NextResponse.json(events);
     } catch (apiError) {
       console.warn('Third-party API failed, using fallback data:', apiError);

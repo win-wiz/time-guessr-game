@@ -31,6 +31,7 @@ const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
  */
 export async function fetchEventsFromAPI(count: number = 5): Promise<TimeGuessrEvent[]> {
   try {
+    debugger;
     const response = await fetch(`${API_BASE_URL}/events?count=${count}`, {
       method: 'GET',
       headers: {

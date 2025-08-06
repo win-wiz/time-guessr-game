@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Header from "@/components/Header";
-import { TimeGuessrEvent } from "@/lib/data-service";
+import { fetchEventsFromAPI, TimeGuessrEvent } from "@/lib/data-service";
 
 // TimeGuessrEvent接口已从data-service中导入
 
@@ -42,10 +42,11 @@ export default function Game() {
 
   useEffect(() => {
     // 获取事件数据
-    fetch('/api/events?count=5')
-      .then(res => res.json())
-      .then(data => setEvents(data))
-      .catch(error => console.error('Error fetching events:', error));
+    // fetch('/api/events?count=5')
+    //   .then(res => res.json())
+    //   .then(data => setEvents(data))
+    //   .catch(error => console.error('Error fetching events:', error));
+    fetchEventsFromAPI(5).then(data => setEvents(data)).catch(error => console.error('Error fetching events:', error));
   }, []);
 
   useEffect(() => {
