@@ -1,8 +1,7 @@
 // lib/location-generator.ts
 
 import { hasStreetView } from "@/lib/streetview";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { fetchVerifiedLocationsFromAPI, submitLocationToAPI, Location } from "@/lib/data-service";
 
 const CALGARY_BOUNDS = {
   north: 51.054582, // Northeast corner 51.054582, -114.053253
@@ -11,10 +10,7 @@ const CALGARY_BOUNDS = {
   east: -114.050461, // Southeast corner 51.035962, -114.050461
 };
 
-export interface Location {
-  lat: number;
-  lng: number;
-}
+// Location接口已在data-service.ts中定义
 
 export async function generateRandomLocation(): Promise<Location> {
   const lat =
@@ -31,27 +27,42 @@ export async function validateStreetView(location: Location): Promise<boolean> {
 }
 
 export async function getVerifiedLocations(count = 10): Promise<Location[]> {
-  const verifiedRef = collection(db, "verifiedLocations");
-  const snap = await getDocs(verifiedRef);
-
-  const allLocations: Location[] = snap.docs.map((doc) => {
-    const data = doc.data();
-    return { lat: data.lat, lng: data.lng };
-  });
-
-  // Shuffle and select unique random entries
-  const shuffled = allLocations.sort(() => 0.5 - Math.random());
-  const selected = shuffled.slice(0, count);
-
-  // If not enough cached, generate more
-  while (selected.length < count) {
-    const candidate = await generateRandomLocation();
-    const isValid = await validateStreetView(candidate);
-    if (isValid) {
-      await addDoc(verifiedRef, candidate);
-      selected.push(candidate);
+  try {
+    // 首先尝试从第三方API获取验证过的位置
+    const locations = await fetchVerifiedLocationsFromAPI(count);
+    
+    if (locations.length >= count) {
+      // 随机选择指定数量的位置
+      const shuffled = locations.sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
     }
+    
+    // 如果API返回的位置不够，生成更多位置
+    const selected = [...locations];
+    while (selected.length < count) {
+      const candidate = await generateRandomLocation();
+      const isValid = await validateStreetView(candidate);
+      if (isValid) {
+        // 向第三方API提交新的验证位置
+        await submitLocationToAPI(candidate);
+        selected.push(candidate);
+      }
+    }
+    
+    return selected;
+  } catch (error) {
+    console.error('Error fetching locations from API, generating fallback locations:', error);
+    
+    // 如果第三方API失败，生成备用位置
+    const fallbackLocations: Location[] = [];
+    while (fallbackLocations.length < count) {
+      const candidate = await generateRandomLocation();
+      const isValid = await validateStreetView(candidate);
+      if (isValid) {
+        fallbackLocations.push(candidate);
+      }
+    }
+    
+    return fallbackLocations;
   }
-
-  return selected;
 }
