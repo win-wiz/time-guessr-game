@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchEventsFromAPI, submitEventToAPI } from "@/lib/data-service";
+import { submitEventToAPI, transformAPIEventToTimeGuessrEvent, APIEventResponse } from "@/lib/data-service";
 
 // 备用模拟数据 - 当第三方API不可用时使用
 const fallbackEvents = [
@@ -72,26 +72,64 @@ const fallbackEvents = [
 
 export async function GET(request: Request) {
   try {
-    debugger
     const { searchParams } = new URL(request.url);
     const count = parseInt(searchParams.get('count') || '5');
-    debugger
+    
+    console.log('API路由被调用，请求数量:', count);
+    
     try {
-      // 首先尝试从第三方API获取数据
-      const events = await fetchEventsFromAPI(count);
-      console.log('Fetched events from API:', events);
-      return NextResponse.json(events);
+      // 直接调用真正的第三方API
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://your-api-endpoint.com';
+      const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
+      
+      console.log('尝试调用第三方API:', API_BASE_URL);
+      
+      const response = await fetch(`${API_BASE_URL}/events?count=${count}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`第三方API调用失败: ${response.status}`);
+      }
+      
+      const apiData = await response.json();
+       console.log('第三方API返回数据:', apiData);
+       
+       // 检查返回的数据结构并提取events数组
+       let eventsArray: APIEventResponse[];
+       if (Array.isArray(apiData)) {
+         eventsArray = apiData;
+       } else if (apiData.events && Array.isArray(apiData.events)) {
+         eventsArray = apiData.events;
+       } else if (apiData.data && Array.isArray(apiData.data)) {
+         eventsArray = apiData.data;
+       } else {
+         // 如果是单个对象，转换为数组
+         eventsArray = [apiData];
+       }
+       
+       // 将API返回的数据转换为应用内部格式
+       const transformedEvents = eventsArray.map(transformAPIEventToTimeGuessrEvent);
+       console.log('转换后的事件数据:', transformedEvents);
+       
+       return NextResponse.json(transformedEvents);
+      
     } catch (apiError) {
-      console.warn('Third-party API failed, using fallback data:', apiError);
+      console.warn('第三方API调用失败，使用备用数据:', apiError);
       
       // 如果第三方API失败，使用备用数据
       const shuffled = [...fallbackEvents].sort(() => 0.5 - Math.random());
       const selectedEvents = shuffled.slice(0, Math.min(count, fallbackEvents.length));
       
+      console.log('返回备用数据:', selectedEvents);
       return NextResponse.json(selectedEvents);
     }
   } catch (error) {
-    console.error('Error fetching events:', error);
+    console.error('API路由错误:', error);
     return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
   }
 }

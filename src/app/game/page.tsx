@@ -12,9 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Header from "@/components/Header";
-import { fetchEventsFromAPI, TimeGuessrEvent } from "@/lib/data-service";
-
-// TimeGuessrEvent接口已从data-service中导入
+import { fetchEventsFromAPI, TimeGuessrEvent, submitGuessToAPI, UserGuess, VerificationResult } from "@/lib/data-service";
 
 export default function Game() {
   const router = useRouter();
@@ -34,29 +32,33 @@ export default function Game() {
     Array<{
       score: number;
       distance: number;
+      yearDifference: number;
       event: TimeGuessrEvent;
       guessedYear: number;
+      actualLat: number;
+      actualLng: number;
     }>
   >([]);
   const [timeRemaining, setTimeRemaining] = useState(60);
 
   useEffect(() => {
     // 获取事件数据
-    // fetch('/api/events?count=5')
-    //   .then(res => res.json())
-    //   .then(data => setEvents(data))
-    //   .catch(error => console.error('Error fetching events:', error));
-    fetchEventsFromAPI(5).then(data => setEvents(data)).catch(error => console.error('Error fetching events:', error));
+    fetchEventsFromAPI(5)
+      .then(data => {
+        console.log('Fetched events:', data);
+        setEvents(data);
+      })
+      .catch(error => {
+        console.error('Error fetching events:', error);
+        // 如果API调用失败，可以显示错误信息给用户
+      });
   }, []);
 
   useEffect(() => {
-    if (events.length && currentRound <= totalRounds) {
-      setCurrentEvent(events[currentRound - 1]);
-      setTimeRemaining(60);
-      // 重置年份选择为事件年份附近的随机值
-      const eventYear = events[currentRound - 1].year;
-      const randomOffset = Math.floor(Math.random() * 21) - 10; // -10 到 +10 年
-      setSelectedYear(Math.max(1900, Math.min(2024, eventYear + randomOffset)));
+    if (events.length > 0 && currentRound <= events.length) {
+      const event = events[currentRound - 1];
+      setCurrentEvent(event);
+      setSelectedYear(2000); // 重置年份选择
     }
   }, [currentRound, events]);
 
@@ -75,33 +77,69 @@ export default function Game() {
     }
   };
 
-  const handleSubmitGuess = () => {
+  const handleSubmitGuess = async () => {
     if (!currentEvent) return;
 
     if (!guessLocation) {
       // User made no guess → 0 points
       setScores([
         ...scores,
-        { score: 0, distance: 0, event: currentEvent, guessedYear: selectedYear },
+        { 
+          score: 0, 
+          distance: 0, 
+          yearDifference: Math.abs(selectedYear - currentEvent.year),
+          event: currentEvent, 
+          guessedYear: selectedYear,
+          actualLat: currentEvent.latitude,
+          actualLng: currentEvent.longitude
+        },
       ]);
-    } else {
+      setGameState("results");
+      return;
+    }
+
+    try {
+      // 提交猜测到后台进行验证
+      const guess: UserGuess = {
+        eventId: currentEvent.id,
+        guessedLat: guessLocation.lat,
+        guessedLng: guessLocation.lng,
+        guessedYear: selectedYear
+      };
+
+      const result: VerificationResult = await submitGuessToAPI(guess);
+      
+      setScores([...scores, { 
+        score: result.score, 
+        distance: result.distance,
+        yearDifference: result.yearDifference,
+        event: currentEvent, 
+        guessedYear: selectedYear,
+        actualLat: result.actualLat,
+        actualLng: result.actualLng
+      }]);
+    } catch (error) {
+      console.error('Error submitting guess:', error);
+      // 如果API调用失败，使用本地计算作为备选
       const distance = calculateDistance(
         guessLocation.lat,
         guessLocation.lng,
         currentEvent.latitude,
         currentEvent.longitude
       );
-      // 计算年份差异的分数加成/减分
       const yearDifference = Math.abs(selectedYear - currentEvent.year);
-      const yearBonus = Math.max(0, 100 - yearDifference * 5); // 年份越接近，加分越多
+      const yearBonus = Math.max(0, 100 - yearDifference * 5);
       const locationScore = calculateScore(distance);
       const totalScore = Math.round(locationScore + yearBonus);
       
       setScores([...scores, { 
         score: totalScore, 
-        distance, 
+        distance,
+        yearDifference,
         event: currentEvent, 
-        guessedYear: selectedYear 
+        guessedYear: selectedYear,
+        actualLat: currentEvent.latitude,
+        actualLng: currentEvent.longitude
       }]);
     }
 
@@ -126,8 +164,7 @@ export default function Game() {
     setGameState("guessing");
     setTimeRemaining(60);
     // 重新获取事件数据
-    fetch('/api/events?count=5')
-      .then(res => res.json())
+    fetchEventsFromAPI(5)
       .then(data => setEvents(data))
       .catch(error => console.error('Error fetching events:', error));
   };
@@ -161,8 +198,14 @@ export default function Game() {
               <GameImage imageUrl={currentEvent.image_url} />
               <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2">历史线索</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                  <strong>年份:</strong> {currentEvent.year}
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  <strong>事件名称:</strong> {currentEvent.event_name}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  <strong>城市:</strong> {currentEvent.city}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  <strong>事件详情:</strong> {currentEvent.event_detail}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   <strong>描述:</strong> {currentEvent.event_description}
@@ -195,8 +238,8 @@ export default function Game() {
             <GameResults
               guessLocation={guessLocation || { lat: 0, lng: 0 }}
               actualLocation={{
-                lat: currentEvent.latitude,
-                lng: currentEvent.longitude
+                lat: scores[scores.length - 1]?.actualLat || currentEvent.latitude,
+                lng: scores[scores.length - 1]?.actualLng || currentEvent.longitude
               }}
               score={scores[scores.length - 1]?.score || 0}
               distance={scores[scores.length - 1]?.distance || 0}
@@ -239,13 +282,13 @@ export default function Game() {
                         <strong>年份:</strong> 猜测 {round.guessedYear} / 实际 {round.event.year}
                         {round.guessedYear && (
                           <span className={`ml-2 text-xs ${
-                            Math.abs(round.guessedYear - round.event.year) <= 5 
+                            round.yearDifference <= 5 
                               ? 'text-green-600 dark:text-green-400' 
-                              : Math.abs(round.guessedYear - round.event.year) <= 15
+                              : round.yearDifference <= 15
                               ? 'text-yellow-600 dark:text-yellow-400'
                               : 'text-red-600 dark:text-red-400'
                           }`}>
-                            (差异 {Math.abs(round.guessedYear - round.event.year)} 年)
+                            (差异 {round.yearDifference} 年)
                           </span>
                         )}
                       </p>

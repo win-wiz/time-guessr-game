@@ -36,7 +36,16 @@ export function GameMap({
   });
 
   if (!isLoaded) {
-    return <div className="text-white bg-black p-4">Loading map...</div>;
+    return (
+      <div className="h-[400px] w-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg border">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-300">Loading map...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            API Key: {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? '已配置' : '未配置'}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

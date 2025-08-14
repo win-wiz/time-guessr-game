@@ -6,14 +6,14 @@ interface GameImageProps {
 
 export function GameImage({ imageUrl }: GameImageProps) {
   return (
-    <Card className="overflow-hidden">
+    <div className="overflow-hidden rounded-lg border bg-white dark:bg-gray-800 shadow-sm">
       <div className="relative h-[500px] w-full">
         <img
           src={imageUrl || "/placeholder.svg"}
-          alt="Toronto street view with blurred signs"
+          alt="Historical event image"
           className="h-full w-full object-cover"
         />
       </div>
-    </Card>
+    </div>
   )
 }
