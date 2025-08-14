@@ -9,9 +9,10 @@ import { GameImage } from "@/components/game-image";
 import { calculateScore, calculateDistance } from "@/lib/game-utils";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { fetchEventsFromAPI, TimeGuessrEvent, submitGuessToAPI, UserGuess, VerificationResult } from "@/lib/data-service";
 
 export default function Game() {
@@ -45,7 +46,7 @@ export default function Game() {
     // 获取事件数据
     fetchEventsFromAPI(5)
       .then(data => {
-        console.log('Fetched events:', data);
+        // console.log('Fetched events:', data);
         setEvents(data);
       })
       .catch(error => {
@@ -173,68 +174,87 @@ export default function Game() {
 
   return (
     <main className="min-h-screen bg-white text-black dark:bg-[#001233] dark:text-white">
-      <Header />
-      <div className="container mx-auto p-4">
-        <div className="mb-4 flex items-center">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Button>
-          </Link>
-          <div className="ml-auto">
-            <GameProgress
-              currentRound={currentRound}
-              totalRounds={totalRounds}
-              scores={scores}
+      {/* 游戏专用Header */}
+       <header className="bg-white text-[#00205B] shadow-md dark:bg-[#00205B] dark:text-white">
+         <div className="flex justify-between items-center p-4 px-6">
+           <div className="flex items-center gap-2">
+             <MapPin className="h-6 w-6 text-[#CF142B]" />
+             <h1 className="text-xl font-bold">CalgaryGuessr</h1>
+           </div>
+           <div className="flex items-center gap-4">
+             <GameProgress
+               currentRound={currentRound}
+               totalRounds={totalRounds}
+               scores={scores}
+             />
+             <ThemeToggle />
+           </div>
+         </div>
+       </header>
+      
+      {gameState === "guessing" && currentEvent && (
+        <div className="relative min-h-[calc(100vh-6rem)] overflow-hidden">
+          {/* 背景图片 - 铺满整个屏幕 */}
+          {currentEvent && (
+            <div 
+              className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-20 blur-sm pointer-events-none z-0"
+              style={{
+                backgroundImage: `url(${currentEvent.image_url})`,
+              }}
             />
-          </div>
-        </div>
-
-        {gameState === "guessing" && currentEvent && (
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="md:col-span-2">
-              {/* 展示历史事件图片 */}
-              <GameImage imageUrl={currentEvent.image_url} />
-              <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2">历史线索</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                  <strong>事件名称:</strong> {currentEvent.event_name}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                  <strong>城市:</strong> {currentEvent.city}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                  <strong>事件详情:</strong> {currentEvent.event_detail}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  <strong>描述:</strong> {currentEvent.event_description}
-                </p>
+          )}
+          
+          {/* 主要内容区域 - 垂直居中 */}
+          <div className="relative z-10 h-full flex items-center justify-center p-4">
+            <div className="w-full max-w-7xl grid gap-6 lg:grid-cols-5 h-[80vh]">
+              <div className="lg:col-span-3 relative h-full flex flex-col">
+                {/* 浮动的事件信息 - 移到图片上方 */}
+                <div className="mb-4 p-4 bg-gradient-to-r from-black/80 to-black/60 backdrop-blur-md rounded-xl text-white shadow-2xl border border-white/10">
+                  <h3 className="text-xl font-bold text-center tracking-wide">
+                    {currentEvent.event_name}
+                  </h3>
+                </div>
+                
+                {/* 展示历史事件图片 - 自适应显示 */}
+                <div className="flex-1 w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <img 
+                    src={currentEvent.image_url} 
+                    alt={currentEvent.event_name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              </div>
+            
+              <div className="lg:col-span-2 flex flex-col space-y-4 relative z-20 h-full">
+                <div className="flex-1 min-h-0">
+                  <GameMap
+                    onMapClick={handleMapClick}
+                    guessLocation={guessLocation}
+                    actualLocation={null}
+                    isGuessing={true}
+                  />
+                </div>
+                <div className="flex-shrink-0">
+                  <GameControls
+                    onSubmitGuess={handleSubmitGuess}
+                    hasGuess={!!guessLocation}
+                    timeRemaining={timeRemaining}
+                    selectedYear={selectedYear}
+                    onYearChange={setSelectedYear}
+                    minYear={1900}
+                    maxYear={2024}
+                  />
+                </div>
               </div>
             </div>
-            <div className="space-y-4">
-              <GameMap
-                onMapClick={handleMapClick}
-                guessLocation={guessLocation}
-                actualLocation={null}
-                isGuessing={true}
-              />
-              <GameControls
-              onSubmitGuess={handleSubmitGuess}
-              hasGuess={!!guessLocation}
-              timeRemaining={timeRemaining}
-              selectedYear={selectedYear}
-              onYearChange={setSelectedYear}
-              minYear={1900}
-              maxYear={2024}
-            />
-            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {gameState === "results" &&
-          currentEvent &&
-          currentRound <= totalRounds && (
+      {gameState === "results" &&
+        currentEvent &&
+        currentRound <= totalRounds && (
+          <div className="p-4">
             <GameResults
               guessLocation={guessLocation || { lat: 0, lng: 0 }}
               actualLocation={{
@@ -248,10 +268,12 @@ export default function Game() {
               guessedYear={scores[scores.length - 1]?.guessedYear}
               actualYear={currentEvent.year}
             />
-          )}
+          </div>
+        )}
 
-        {gameState === "summary" && (
-          <div className="rounded-lg bg-white dark:bg-gray-800 light:bg-white p-6 shadow-lg">
+      {gameState === "summary" && (
+        <div className="p-4">
+          <div className="rounded-lg bg-white dark:bg-gray-800 light:bg-white p-6 shadow-lg max-w-4xl mx-auto">
             <h2 className="mb-4 text-2xl font-bold">游戏总结</h2>
             <div className="mb-6">
               <p className="text-xl">总分: {totalScore} 分</p>
@@ -307,8 +329,8 @@ export default function Game() {
               </Button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </main>
   );
 }
