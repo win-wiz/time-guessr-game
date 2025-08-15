@@ -6,7 +6,6 @@ import {
   MarkerF,
   PolylineF,
 } from "@react-google-maps/api";
-import { Card } from "@/components/ui/card";
 
 interface GameMapProps {
   onMapClick?: (lat: number, lng: number) => void;
@@ -17,7 +16,8 @@ interface GameMapProps {
 
 const containerStyle = {
   width: "100%",
-  height: "400px",
+  height: "100%",
+  // minHeight: "200px",
 };
 
 const centerCalgary = {
@@ -31,17 +31,36 @@ export function GameMap({
   actualLocation,
   isGuessing,
 }: GameMapProps) {
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
   });
+
+  if (loadError) {
+    return (
+      <div className="h-full w-full bg-gradient-to-br from-red-900/50 to-red-800/50 flex items-center justify-center rounded-lg border border-red-500/30">
+        <div className="text-center p-6">
+          <div className="text-4xl mb-4">🗺️</div>
+          <p className="text-white font-bold mb-2">地图加载失败</p>
+          <p className="text-red-200 text-sm mb-4">
+            错误: {loadError.message}
+          </p>
+          <p className="text-red-300 text-xs">
+            请检查 Google Maps API Key 配置
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoaded) {
     return (
-      <div className="h-[400px] w-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg border">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-300">Loading map...</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            API Key: {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? '已配置' : '未配置'}
+      <div className="h-full w-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center rounded-lg border border-white/20">
+        <div className="text-center p-6">
+          <div className="text-4xl mb-4">🗺️</div>
+          <p className="text-white font-bold mb-2">正在加载地图...</p>
+          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-300 text-sm">
+            API Key: {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? '✅ 已配置' : '❌ 未配置'}
           </p>
         </div>
       </div>
@@ -49,7 +68,7 @@ export function GameMap({
   }
 
   return (
-    <Card className="overflow-hidden dark:bg-gray-800 light:bg-white">
+    <div className="w-full h-full relative" style={{ minHeight: '200px' }}>
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={centerCalgary}
@@ -63,6 +82,18 @@ export function GameMap({
           disableDefaultUI: true,
           clickableIcons: false,
           gestureHandling: "greedy",
+          styles: [
+            {
+              featureType: "poi",
+              elementType: "labels",
+              stylers: [{ visibility: "off" }]
+            },
+            {
+              featureType: "transit",
+              elementType: "labels",
+              stylers: [{ visibility: "off" }]
+            }
+          ]
         }}
       >
         {guessLocation && (
@@ -99,6 +130,6 @@ export function GameMap({
           />
         )}
       </GoogleMap>
-    </Card>
+    </div>
   );
 }

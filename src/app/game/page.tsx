@@ -9,11 +9,13 @@ import { GameImage } from "@/components/game-image";
 import { calculateScore, calculateDistance } from "@/lib/game-utils";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Target, Calendar, Maximize2, Minimize2, Play, Pause, RotateCcw, Zap } from "lucide-react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { fetchEventsFromAPI, TimeGuessrEvent, submitGuessToAPI, UserGuess, VerificationResult } from "@/lib/data-service";
+
+const currentYear = new Date().getFullYear();
 
 export default function Game() {
   const router = useRouter();
@@ -40,7 +42,10 @@ export default function Game() {
       actualLng: number;
     }>
   >([]);
-  const [timeRemaining, setTimeRemaining] = useState(60);
+  const [timeRemaining, setTimeRemaining] = useState(60000);
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
 
   useEffect(() => {
     // 获取事件数据
@@ -152,6 +157,7 @@ export default function Game() {
       setCurrentRound(currentRound + 1);
       setGuessLocation(null);
       setGameState("guessing");
+      setTimeRemaining(60);
     } else {
       setGameState("summary");
     }
@@ -173,60 +179,177 @@ export default function Game() {
   const totalScore = scores.reduce((sum, round) => sum + round.score, 0);
 
   return (
-    <main className="min-h-screen bg-white text-black dark:bg-[#001233] dark:text-white">
-      {/* 游戏专用Header */}
-       <header className="bg-white text-[#00205B] shadow-md dark:bg-[#00205B] dark:text-white">
-         <div className="flex justify-between items-center p-4 px-6">
-           <div className="flex items-center gap-2">
-             <MapPin className="h-6 w-6 text-[#CF142B]" />
-             <h1 className="text-xl font-bold">CalgaryGuessr</h1>
-           </div>
-           <div className="flex items-center gap-4">
-             <GameProgress
-               currentRound={currentRound}
-               totalRounds={totalRounds}
-               scores={scores}
-             />
-             <ThemeToggle />
-           </div>
-         </div>
-       </header>
+    <main className="h-screen bg-black text-white flex flex-col overflow-hidden relative">
+      {
+        currentEvent && (
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none" 
+            style={{ backgroundImage: `url(${currentEvent?.image_url})` 
+                  , backgroundSize: 'cover' 
+                  , backgroundRepeat: 'no-repeat' 
+                  , filter: 'blur(5px)' 
+              }}>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/30 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-black/25 pointer-events-none"></div>
+          </div>
+        )
+      }
+       
+      {/* 可缩放背景图片 - 支持滚轮缩放和拖拽 */}
+      {/* {gameState === "guessing" && currentEvent && (
+        <GameImage 
+              imageUrl={currentEvent.image_url} 
+              eventName={currentEvent.event_name}
+            />
+      )} */}
+          
+
+      {/* 顶部浮动状态栏 - 中性优雅风格 */}
+      <header className="relative z-50 bg-gradient-to-r from-slate-900/40 via-gray-800/30 to-slate-900/40 backdrop-blur-2xl border-b border-white/10 pointer-events-auto">
+        <div className="flex justify-between items-center px-8 py-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center shadow-2xl border-2 border-blue-400/30">
+              <MapPin className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                CalgaryGuessr
+              </h1>
+              <div className="text-sm text-blue-200/90">历史时光机</div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-8">
+            <GameProgress
+              currentRound={currentRound}
+              totalRounds={totalRounds}
+              scores={scores}
+            />
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
       
       {gameState === "guessing" && currentEvent && (
-        <div className="relative min-h-[calc(100vh-6rem)] overflow-hidden">
-          {/* 背景图片 - 铺满整个屏幕 */}
-          {currentEvent && (
-            <div 
-              className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-20 blur-sm pointer-events-none z-0"
-              style={{
-                backgroundImage: `url(${currentEvent.image_url})`,
-              }}
-            />
-          )}
-          
-          {/* 主要内容区域 - 垂直居中 */}
-          <div className="relative z-10 h-full flex items-center justify-center p-4">
-            <div className="w-full max-w-7xl grid gap-6 lg:grid-cols-5 h-[80vh]">
-              <div className="lg:col-span-3 relative h-full flex flex-col">
-                {/* 浮动的事件信息 - 移到图片上方 */}
-                <div className="mb-4 p-4 bg-gradient-to-r from-black/80 to-black/60 backdrop-blur-md rounded-xl text-white shadow-2xl border border-white/10">
-                  <h3 className="text-xl font-bold text-center tracking-wide">
-                    {currentEvent.event_name}
-                  </h3>
+        <div className="flex-1 relative z-10 pointer-events-none">
+          {/* 顶部紧凑信息条 - 中性风格 */}
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30">
+            <div className="bg-gradient-to-r from-slate-900/60 via-gray-800/50 to-slate-900/60 backdrop-blur-xl rounded-full px-8 py-3 border border-white/20 shadow-xl">
+              <div className="flex items-center gap-8 text-white">
+                {/* 事件信息 */}
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40">
+                    <Target className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-bold text-white">{currentEvent.event_name}</span>
+                    <span className="text-gray-300 ml-2">第 {currentRound}/{totalRounds} 轮</span>
+                  </div>
                 </div>
                 
-                {/* 展示历史事件图片 - 自适应显示 */}
-                <div className="flex-1 w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <img 
-                    src={currentEvent.image_url} 
-                    alt={currentEvent.event_name}
-                    className="max-w-full max-h-full object-contain"
-                  />
+                {/* 时间 */}
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-yellow-400" />
+                  <span className={`font-bold ${timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+                    {timeRemaining}s
+                  </span>
+                </div>
+                
+                {/* 位置状态 */}
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-400" />
+                  <span className={`text-sm font-medium ${guessLocation ? 'text-emerald-400' : 'text-gray-400'}`}>
+                    {guessLocation ? '✓ 已选择' : '未选择'}
+                  </span>
                 </div>
               </div>
-            
-              <div className="lg:col-span-2 flex flex-col space-y-4 relative z-20 h-full">
-                <div className="flex-1 min-h-0">
+            </div>
+          </div>
+
+          {/* 右侧年份选择器 - 中性风格 */}
+          <div className="absolute top-20 right-8 z-30 pointer-events-auto">
+            <div className="bg-gradient-to-br from-slate-900/70 via-gray-800/60 to-slate-900/70 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-xl">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Calendar className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm font-bold text-white">年份</span>
+                </div>
+                
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center shadow-xl mx-auto mb-3 border-2 border-blue-400/40">
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-white">{selectedYear}</div>
+                  </div>
+                </div>
+                
+                <input
+                  type="range"
+                  min={1900}
+                  max={currentYear}
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-600/60 rounded-full appearance-none cursor-pointer accent-blue-500 mb-2"
+                />
+                
+                <div className="flex justify-between text-xs text-gray-300">
+                  <span>1900</span>
+                  <span>2024</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 浮动地图区域 - 浮在图片上方 */}
+          <div className="absolute bottom-4 left-4 right-4 z-30 pointer-events-auto" data-map-container>
+            <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl relative isolate">
+              {/* 提交按钮移到地图内部 */}
+              <div className="flex justify-center absolute left-1/2 transform -translate-x-1/2 -top-[28px]">
+                <button
+                  onClick={handleSubmitGuess}
+                  disabled={!guessLocation}
+                  className={`group relative px-8 py-3 rounded-full text-lg font-bold transition-all duration-300 shadow-xl border-2 ${
+                    guessLocation 
+                      ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 hover:from-blue-500 hover:via-purple-500 hover:to-indigo-600 text-white border-blue-400/50 transform hover:scale-105' 
+                      : 'bg-gray-700/60 text-gray-400 border-gray-600/40 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5" />
+                    {guessLocation ? '🎯 提交猜测' : '请先选择位置'}
+                  </div>
+                  
+                  {guessLocation && (
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400/20 via-purple-500/20 to-indigo-600/20 animate-pulse"></div>
+                  )}
+                </button>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40">
+                      <MapPin className="w-4 h-4 text-white" />
+                    </div>
+                    在地图上标记位置
+                  </h3>
+                  
+                  <div className="flex items-center gap-3">
+                    {guessLocation && (
+                      <div className="bg-emerald-600/30 border border-emerald-500/60 text-emerald-300 px-3 py-1 rounded-full text-xs font-medium animate-pulse">
+                        ✓ 位置已标记
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={() => setIsMapExpanded(!isMapExpanded)}
+                      className="p-2 bg-gray-700/60 hover:bg-gray-600/70 rounded-full transition-colors border border-gray-600/40"
+                    >
+                      {isMapExpanded ? <Minimize2 className="w-4 h-4 text-gray-200" /> : <Maximize2 className="w-4 h-4 text-gray-200" />}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className={`rounded-xl overflow-hidden border border-white/10 shadow-xl transition-all duration-500 ${
+                  isMapExpanded ? 'h-[500px]' : 'h-16'
+                }`}>
                   <GameMap
                     onMapClick={handleMapClick}
                     guessLocation={guessLocation}
@@ -234,18 +357,96 @@ export default function Game() {
                     isGuessing={true}
                   />
                 </div>
-                <div className="flex-shrink-0">
-                  <GameControls
-                    onSubmitGuess={handleSubmitGuess}
-                    hasGuess={!!guessLocation}
-                    timeRemaining={timeRemaining}
-                    selectedYear={selectedYear}
-                    onYearChange={setSelectedYear}
-                    minYear={1900}
-                    maxYear={2024}
-                  />
+              </div>
+            </div>
+          </div>
+
+
+          {/* 游戏提示 - 中性风格 */}
+          <div className="absolute top-20 left-8 z-30">
+            <div className="bg-gradient-to-br from-slate-900/50 via-gray-800/40 to-slate-900/50 backdrop-blur-lg rounded-xl px-4 py-2 border border-white/15 shadow-lg max-w-xs">
+              <div className="flex items-center gap-2 text-white/90">
+                <Target className="w-3 h-3 text-blue-400" />
+                <span className="text-xs font-medium">观察建筑、标志、服装等细节推测地点和时间</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 移动端适配 */}
+          <div className="lg:hidden absolute inset-0 bg-black/90 backdrop-blur-sm flex flex-col z-40">
+            {/* 移动端顶部 */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-lg">{currentEvent.event_name}</h3>
+                  <p className="text-sm opacity-90">第 {currentRound} / {totalRounds} 轮</p>
+                </div>
+                <div className={`text-right ${timeRemaining <= 10 ? 'animate-pulse' : ''}`}>
+                  <div className="text-2xl font-bold">{timeRemaining}s</div>
                 </div>
               </div>
+            </div>
+
+            {/* 移动端图片预览 */}
+            <div className="h-40 bg-gray-800 relative overflow-hidden">
+              <img 
+                src={currentEvent.image_url} 
+                alt={currentEvent.event_name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                <div className="p-3 text-white">
+                  <p className="text-sm font-medium">观察图片细节，推测事件发生的地点和年份</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 移动端地图 */}
+            <div className="flex-1 relative">
+              <GameMap
+                onMapClick={handleMapClick}
+                guessLocation={guessLocation}
+                actualLocation={null}
+                isGuessing={true}
+              />
+              {guessLocation && (
+                <div className="absolute top-2 right-2 bg-green-500/80 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  位置已选择
+                </div>
+              )}
+            </div>
+
+            {/* 移动端控制面板 */}
+            <div className="bg-black/95 backdrop-blur-sm p-4 space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-white font-medium">年份: {selectedYear}</label>
+                </div>
+                <input
+                  type="range"
+                  min={1900}
+                  max={2024}
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>1900</span>
+                  <span>2024</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleSubmitGuess}
+                disabled={!guessLocation}
+                className={`w-full py-4 rounded-2xl text-lg font-bold ${
+                  guessLocation 
+                    ? 'bg-gradient-to-r from-green-500 to-purple-600 text-white' 
+                    : 'bg-gray-700 text-gray-400'
+                }`}
+              >
+                {guessLocation ? '🎯 提交猜测' : '请先选择位置'}
+              </button>
             </div>
           </div>
         </div>
@@ -254,79 +455,136 @@ export default function Game() {
       {gameState === "results" &&
         currentEvent &&
         currentRound <= totalRounds && (
-          <div className="p-4">
-            <GameResults
-              guessLocation={guessLocation || { lat: 0, lng: 0 }}
-              actualLocation={{
-                lat: scores[scores.length - 1]?.actualLat || currentEvent.latitude,
-                lng: scores[scores.length - 1]?.actualLng || currentEvent.longitude
-              }}
-              score={scores[scores.length - 1]?.score || 0}
-              distance={scores[scores.length - 1]?.distance || 0}
-              onNextRound={handleNextRound}
-              isLastRound={currentRound === totalRounds}
-              guessedYear={scores[scores.length - 1]?.guessedYear}
-              actualYear={currentEvent.year}
-            />
+          <div className="flex-1 bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 p-6 overflow-auto relative z-10">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-gradient-to-br from-slate-900/70 via-gray-800/60 to-slate-900/70 backdrop-blur-2xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-700 via-purple-700 to-indigo-800 p-8 text-white text-center border-b border-white/20">
+                  <h2 className="text-4xl font-bold mb-2 text-white">🎯 回合结果</h2>
+                  <p className="text-blue-200 text-lg">第 {currentRound} / {totalRounds} 轮</p>
+                </div>
+                
+                <div className="p-8">
+                  <GameResults
+                    guessLocation={guessLocation || { lat: 0, lng: 0 }}
+                    actualLocation={{
+                      lat: scores[scores.length - 1]?.actualLat || currentEvent.latitude,
+                      lng: scores[scores.length - 1]?.actualLng || currentEvent.longitude
+                    }}
+                    score={scores[scores.length - 1]?.score || 0}
+                    distance={scores[scores.length - 1]?.distance || 0}
+                    onNextRound={handleNextRound}
+                    isLastRound={currentRound === totalRounds}
+                    guessedYear={scores[scores.length - 1]?.guessedYear}
+                    actualYear={currentEvent.year}
+                  />
+                </div>
+                
+                <div className="bg-gradient-to-r from-slate-900/50 via-gray-800/40 to-slate-900/50 p-6 flex justify-center border-t border-white/20">
+                  <button
+                    onClick={handleNextRound}
+                    className="px-12 py-4 bg-gradient-to-r from-blue-600 via-purple-700 to-indigo-800 hover:from-blue-500 hover:via-purple-600 hover:to-indigo-700 text-white text-xl font-bold rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-blue-400/40"
+                  >
+                    {currentRound === totalRounds ? '🏆 查看总结' : '➡️ 下一轮'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
       {gameState === "summary" && (
-        <div className="p-4">
-          <div className="rounded-lg bg-white dark:bg-gray-800 light:bg-white p-6 shadow-lg max-w-4xl mx-auto">
-            <h2 className="mb-4 text-2xl font-bold">游戏总结</h2>
-            <div className="mb-6">
-              <p className="text-xl">总分: {totalScore} 分</p>
-            </div>
-
-            <div className="mb-6 space-y-4">
-              <h3 className="text-lg font-semibold">各轮结果:</h3>
-              {scores.map((round, index) => (
-                <div
-                  key={index}
-                  className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-700"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium">第 {index + 1} 轮</p>
-                    <p className="font-bold text-lg">{round.score} 分</p>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                    <strong>事件:</strong> {round.event.city} - {round.event.event_name}
-                  </p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        <strong>距离:</strong> {round.distance.toFixed(2)} km
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        <strong>年份:</strong> 猜测 {round.guessedYear} / 实际 {round.event.year}
-                        {round.guessedYear && (
-                          <span className={`ml-2 text-xs ${
-                            round.yearDifference <= 5 
-                              ? 'text-green-600 dark:text-green-400' 
-                              : round.yearDifference <= 15
-                              ? 'text-yellow-600 dark:text-yellow-400'
-                              : 'text-red-600 dark:text-red-400'
-                          }`}>
-                            (差异 {round.yearDifference} 年)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
+        <div className="flex-1 bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 p-6 overflow-auto relative z-10">
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-gradient-to-br from-slate-900/70 via-gray-800/60 to-slate-900/70 backdrop-blur-2xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-700 via-purple-700 to-indigo-800 p-12 text-white text-center border-b border-white/20">
+                <h2 className="text-5xl font-bold mb-6 text-white">🏆 游戏结束!</h2>
+                <div className="text-8xl font-bold mb-6 bg-gradient-to-r from-blue-300 via-purple-400 to-indigo-500 bg-clip-text text-transparent">
+                  {totalScore}
                 </div>
-              ))}
-            </div>
-
-            <div className="flex justify-center">
-              <Button
-                onClick={handlePlayAgain}
-                className="bg-blue-800 hover:bg-blue-900 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
-              >
-                再玩一次
-              </Button>
+                <p className="text-blue-200 text-xl">你完成了所有 {totalRounds} 轮挑战</p>
+              </div>
+              
+              <div className="p-8">
+                <h3 className="text-3xl font-bold text-white mb-8 flex items-center justify-center gap-4">
+                  <span className="text-4xl">📊</span>
+                  详细成绩
+                </h3>
+                
+                <div className="grid gap-6 max-h-96 overflow-y-auto">
+                  {scores.map((round, index) => (
+                    <div
+                      key={index}
+                      className="bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-300 transform hover:scale-105"
+                    >
+                      <div className="bg-gradient-to-r from-blue-600/30 to-purple-600/30 p-6 flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-xl">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-bold text-white text-xl">{round.event.event_name}</p>
+                            <p className="text-blue-200 text-lg">{round.event.city}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-4xl font-bold text-white">{round.score}</div>
+                          <div className="text-gray-300">分数</div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-6 grid grid-cols-2 gap-6">
+                        <div className="bg-white/5 p-6 rounded-2xl text-center">
+                          <div className="text-gray-300 mb-3">📍 距离误差</div>
+                          <div className="text-2xl font-bold text-white mb-2">
+                            {round.distance.toFixed(1)} km
+                          </div>
+                          <span className={`text-sm px-4 py-2 rounded-full ${
+                            round.distance <= 10 
+                              ? 'bg-green-500/20 text-green-400' 
+                              : round.distance <= 50
+                              ? 'bg-yellow-500/20 text-yellow-400'
+                              : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {round.distance <= 10 ? '🎯 精确' : round.distance <= 50 ? '👍 不错' : '📍 较远'}
+                          </span>
+                        </div>
+                        
+                        <div className="bg-white/5 p-6 rounded-2xl text-center">
+                          <div className="text-gray-300 mb-3">📅 年份误差</div>
+                          <div className="text-2xl font-bold text-white mb-2">
+                            {round.yearDifference} 年
+                          </div>
+                          <span className={`text-sm px-4 py-2 rounded-full ${
+                            round.yearDifference <= 5 
+                              ? 'bg-green-500/20 text-green-400' 
+                              : round.yearDifference <= 15
+                              ? 'bg-yellow-500/20 text-yellow-400'
+                              : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {round.yearDifference <= 5 ? '🎯 精确' : round.yearDifference <= 15 ? '📅 接近' : '⏰ 较远'}
+                          </span>
+                          <div className="text-gray-400 mt-2">
+                            {round.guessedYear} / {round.event.year}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-slate-900/50 via-gray-800/40 to-slate-900/50 p-8 flex justify-center gap-8 border-t border-white/20">
+                <button
+                  onClick={handlePlayAgain}
+                  className="px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-500 hover:to-purple-600 text-white text-xl font-bold rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-blue-400/40"
+                >
+                  🔄 再玩一次
+                </button>
+                
+                <Link href="/" className="px-10 py-4 bg-gradient-to-r from-gray-700 to-slate-800 hover:from-gray-600 hover:to-slate-700 text-white text-xl font-bold rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-gray-500/40">
+                  🏠 返回首页
+                </Link>
+              </div>
             </div>
           </div>
         </div>

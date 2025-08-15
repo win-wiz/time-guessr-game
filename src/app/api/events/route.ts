@@ -97,7 +97,7 @@ export async function GET(request: Request) {
       }
       
       const apiData = await response.json();
-       console.log('第三方API返回数据:', apiData);
+      //  console.log('第三方API返回数据:', apiData);
        
        // 检查返回的数据结构并提取events数组
        let eventsArray: APIEventResponse[];
