@@ -74,3 +74,76 @@
     @apply bg-background text-foreground transition-colors duration-300;
   }
 }
+
+/* 移动端滑块样式优化 */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Webkit浏览器滑块轨道 */
+input[type="range"]::-webkit-slider-track {
+  background: rgba(75, 85, 99, 0.6);
+  height: 12px;
+  border-radius: 6px;
+}
+
+/* Webkit浏览器滑块按钮 */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Firefox浏览器滑块轨道 */
+input[type="range"]::-moz-range-track {
+  background: rgba(75, 85, 99, 0.6);
+  height: 12px;
+  border-radius: 6px;
+  border: none;
+}
+
+/* Firefox浏览器滑块按钮 */
+input[type="range"]::-moz-range-thumb {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* 确保移动端触摸友好 */
+@media (max-width: 768px) {
+  input[type="range"]::-webkit-slider-thumb {
+    height: 28px;
+    width: 28px;
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    height: 28px;
+    width: 28px;
+  }
+}

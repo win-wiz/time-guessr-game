@@ -179,7 +179,7 @@ export default function Game() {
   const totalScore = scores.reduce((sum, round) => sum + round.score, 0);
 
   return (
-    <main className="h-screen bg-black text-white flex flex-col overflow-hidden relative">
+    <main className="h-screen bg-black text-white flex flex-col relative overflow-hidden">
       {
         currentEvent && (
           <div 
@@ -224,16 +224,79 @@ export default function Game() {
       
       {gameState === "guessing" && currentEvent && (
         <div className="relative z-10 pointer-events-none flex-1">
-          {/* 中央图片区域 - 标红区域 */}
-          <div className="absolute w-1/2 left-1/2 top-20 transform -translate-x-1/2 z-20 pointer-events-auto" style={{ height: 'calc(100% - 400px)' }}>
+          {/* 中央图片区域 - 响应式适配 */}
+          <div className="absolute w-full md:w-1/2 left-1/2 top-32 md:top-10 transform -translate-x-1/2 z-20 pointer-events-auto px-4 md:px-0" 
+               style={{ height: 'calc(100vh - 400px)', maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}>
             <GameImage 
               imageUrl={currentEvent.image_url} 
               eventName={currentEvent.event_name}
             />
           </div>
 
-          {/* 左上角游戏提示 - 优化位置 */}
-          <div className="absolute top-6 left-6 z-30">
+          {/* 移动端顶部信息栏 */}
+          <div className="md:hidden absolute top-4 left-4 right-4 z-30 space-y-3">
+            {/* 游戏信息栏 */}
+            <div className="bg-gradient-to-r from-slate-900/90 via-gray-800/80 to-slate-900/90 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-xl">
+              <div className="flex items-center justify-between text-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40">
+                    <Target className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold">{currentEvent.event_name}</div>
+                    <div className="text-xs text-blue-200/80">第 {currentRound}/{totalRounds} 轮</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className={`text-lg font-bold ${timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+                      {timeRemaining}s
+                    </div>
+                  </div>
+                  <div className={`text-sm ${guessLocation ? 'text-emerald-400' : 'text-gray-400'}`}>
+                    {guessLocation ? '✓' : '○'}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* 年份控制栏 */}
+            <div className="bg-gradient-to-r from-slate-900/90 via-gray-800/80 to-slate-900/90 backdrop-blur-xl rounded-xl px-4 py-4 border border-white/20 shadow-xl pointer-events-auto">
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm font-bold text-white">年份</span>
+                  </div>
+                  <div className="w-16 h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center text-white text-sm font-bold border border-blue-400/40">
+                    {selectedYear}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <input
+                    type="range"
+                    min={1900}
+                    max={currentYear}
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="w-full h-3 bg-gray-600/60 rounded-full appearance-none cursor-pointer accent-blue-500 touch-manipulation"
+                    style={{
+                      WebkitAppearance: 'none',
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((selectedYear - 1900) / (currentYear - 1900)) * 100}%, #4b5563 ${((selectedYear - 1900) / (currentYear - 1900)) * 100}%, #4b5563 100%)`
+                    }}
+                  />
+                  <div className="flex justify-between text-xs text-gray-300">
+                    <span>1900</span>
+                    <span>2024</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 桌面端左上角游戏提示 */}
+          <div className="hidden md:block absolute top-6 left-6 z-30">
             <div className="bg-gradient-to-br from-slate-900/80 via-gray-800/70 to-slate-900/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-xl max-w-sm">
               <div className="flex items-center gap-3 text-white/90">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40 flex-shrink-0">
@@ -247,8 +310,8 @@ export default function Game() {
             </div>
           </div>
 
-          {/* 右上角状态信息 - 紧凑布局 */}
-          <div className="absolute top-6 right-6 z-30 flex flex-col gap-3">
+          {/* 桌面端右上角状态信息 */}
+          <div className="hidden md:flex absolute top-6 right-6 z-30 flex-col gap-3">
             {/* 时间倒计时 */}
             <div className="bg-gradient-to-br from-slate-900/80 via-gray-800/70 to-slate-900/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-xl">
               <div className="flex items-center gap-3">
@@ -304,11 +367,29 @@ export default function Game() {
             </div>
           </div>
 
-          {/* 浮动地图区域 - 浮在图片上方 */}
-          <div className="absolute bottom-4 left-4 right-4 z-30 pointer-events-auto" data-map-container>
+          {/* 移动端底部提交按钮 */}
+          <div className="md:hidden absolute bottom-4 left-4 right-4 z-40 pointer-events-auto">
+            <button
+              onClick={handleSubmitGuess}
+              disabled={!guessLocation}
+              className={`w-full py-4 rounded-2xl text-lg font-bold transition-all duration-300 shadow-2xl border-2 ${
+                guessLocation 
+                  ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 hover:from-blue-500 hover:via-purple-500 hover:to-indigo-600 text-white border-blue-400/50 transform hover:scale-105' 
+                  : 'bg-gray-700/60 text-gray-400 border-gray-600/40 cursor-not-allowed'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Zap className="w-5 h-5" />
+                {guessLocation ? '🎯 提交猜测' : '请先在地图上选择位置'}
+              </div>
+            </button>
+          </div>
+
+          {/* 地图区域 - 响应式适配 */}
+          <div className="absolute bottom-20 md:bottom-4 left-4 right-4 z-30 pointer-events-auto" data-map-container>
             <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl relative isolate">
-              {/* 提交按钮移到地图内部 */}
-              <div className="flex justify-center absolute left-1/2 transform -translate-x-1/2 -top-[28px]">
+              {/* 桌面端提交按钮 */}
+              <div className="hidden md:flex justify-center absolute left-1/2 transform -translate-x-1/2 -top-[28px]">
                 <button
                   onClick={handleSubmitGuess}
                   disabled={!guessLocation}
@@ -328,33 +409,34 @@ export default function Game() {
                   )}
                 </button>
               </div>
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40">
-                      <MapPin className="w-4 h-4 text-white" />
+              <div className="p-3 md:p-4">
+                <div className="flex items-center justify-between mb-2 md:mb-3">
+                  <h3 className="text-sm md:text-lg font-bold text-white flex items-center gap-2">
+                    <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40">
+                      <MapPin className="w-3 h-3 md:w-4 md:h-4 text-white" />
                     </div>
-                    在地图上标记位置
+                    <span className="hidden md:inline">在地图上标记位置</span>
+                    <span className="md:hidden">标记位置</span>
                   </h3>
                   
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 md:gap-3">
                     {guessLocation && (
-                      <div className="bg-emerald-600/30 border border-emerald-500/60 text-emerald-300 px-3 py-1 rounded-full text-xs font-medium animate-pulse">
-                        ✓ 位置已标记
+                      <div className="bg-emerald-600/30 border border-emerald-500/60 text-emerald-300 px-2 py-1 rounded-full text-xs font-medium">
+                        ✓ 已标记
                       </div>
                     )}
                     
                     <button
                       onClick={() => setIsMapExpanded(!isMapExpanded)}
-                      className="p-2 bg-gray-700/60 hover:bg-gray-600/70 rounded-full transition-colors border border-gray-600/40"
+                      className="p-1.5 md:p-2 bg-gray-700/60 hover:bg-gray-600/70 rounded-full transition-colors border border-gray-600/40"
                     >
-                      {isMapExpanded ? <Minimize2 className="w-4 h-4 text-gray-200" /> : <Maximize2 className="w-4 h-4 text-gray-200" />}
+                      {isMapExpanded ? <Minimize2 className="w-3 h-3 md:w-4 md:h-4 text-gray-200" /> : <Maximize2 className="w-3 h-3 md:w-4 md:h-4 text-gray-200" />}
                     </button>
                   </div>
                 </div>
                 
                 <div className={`rounded-xl overflow-hidden border border-white/10 shadow-xl transition-all duration-500 ${
-                  isMapExpanded ? 'h-[500px]' : 'h-32'
+                  isMapExpanded ? 'h-[300px] md:h-[500px]' : 'h-24 md:h-32'
                 }`}>
                   <GameMap
                     onMapClick={handleMapClick}
@@ -364,86 +446,6 @@ export default function Game() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
-
-
-
-          {/* 移动端适配 */}
-          <div className="lg:hidden absolute inset-0 bg-black/90 backdrop-blur-sm flex flex-col z-40">
-            {/* 移动端顶部 */}
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-lg">{currentEvent.event_name}</h3>
-                  <p className="text-sm opacity-90">第 {currentRound} / {totalRounds} 轮</p>
-                </div>
-                <div className={`text-right ${timeRemaining <= 10 ? 'animate-pulse' : ''}`}>
-                  <div className="text-2xl font-bold">{timeRemaining}s</div>
-                </div>
-              </div>
-            </div>
-
-            {/* 移动端图片预览 */}
-            <div className="h-40 bg-gray-800 relative overflow-hidden">
-              <img 
-                src={currentEvent.image_url} 
-                alt={currentEvent.event_name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                <div className="p-3 text-white">
-                  <p className="text-sm font-medium">观察图片细节，推测事件发生的地点和年份</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 移动端地图 */}
-            <div className="flex-1 relative">
-              <GameMap
-                onMapClick={handleMapClick}
-                guessLocation={guessLocation}
-                actualLocation={null}
-                isGuessing={true}
-              />
-              {guessLocation && (
-                <div className="absolute top-2 right-2 bg-green-500/80 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  位置已选择
-                </div>
-              )}
-            </div>
-
-            {/* 移动端控制面板 */}
-            <div className="bg-black/95 backdrop-blur-sm p-4 space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-white font-medium">年份: {selectedYear}</label>
-                </div>
-                <input
-                  type="range"
-                  min={1900}
-                  max={2024}
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                />
-                <div className="flex justify-between text-xs text-gray-400 mt-1">
-                  <span>1900</span>
-                  <span>2024</span>
-                </div>
-              </div>
-              
-              <button
-                onClick={handleSubmitGuess}
-                disabled={!guessLocation}
-                className={`w-full py-4 rounded-2xl text-lg font-bold ${
-                  guessLocation 
-                    ? 'bg-gradient-to-r from-green-500 to-purple-600 text-white' 
-                    : 'bg-gray-700 text-gray-400'
-                }`}
-              >
-                {guessLocation ? '🎯 提交猜测' : '请先选择位置'}
-              </button>
             </div>
           </div>
         </div>

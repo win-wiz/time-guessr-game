@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useMemo } from "react";
 import {
   useJsApiLoader,
   GoogleMap,
@@ -20,9 +21,35 @@ const containerStyle = {
   // minHeight: "200px",
 };
 
-const centerCalgary = {
-  lat: 51.0447,
-  lng: -114.0719,
+const defaultCenter = {
+  lat: 34.091158, lng: -118.2795188
+  // lat: 28.245893, lng: 112.956825
+};
+
+const mapOptions = {
+  disableDefaultUI: true,
+  clickableIcons: false,
+  gestureHandling: "greedy" as const,
+  styles: [
+    {
+      featureType: "poi",
+      elementType: "labels",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "transit",
+      elementType: "labels",
+      stylers: [{ visibility: "off" }]
+    }
+  ]
+};
+
+const guessMarkerIcon = {
+  url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+};
+
+const actualMarkerIcon = {
+  url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
 };
 
 export function GameMap({
@@ -34,6 +61,29 @@ export function GameMap({
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
   });
+
+  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (isGuessing && onMapClick && e.latLng) {
+      onMapClick(e.latLng.lat(), e.latLng.lng());
+    }
+  }, [isGuessing, onMapClick]);
+
+  const polylinePath = useMemo(() => {
+    return guessLocation && actualLocation ? [guessLocation, actualLocation] : [];
+  }, [guessLocation, actualLocation]);
+
+  const polylineOptions = useMemo(() => ({
+    strokeColor: "#000",
+    strokeOpacity: 0.6,
+    strokeWeight: 2,
+    icons: [
+      {
+        icon: { path: "M 0,-1 0,1", strokeOpacity: 1 },
+        offset: "0",
+        repeat: "10px",
+      },
+    ],
+  }), []);
 
   if (loadError) {
     return (
@@ -71,62 +121,27 @@ export function GameMap({
     <div className="w-full h-full relative" style={{ minHeight: '200px' }}>
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={centerCalgary}
-        zoom={12}
-        onClick={(e) => {
-          if (isGuessing && onMapClick && e.latLng) {
-            onMapClick(e.latLng.lat(), e.latLng.lng());
-          }
-        }}
-        options={{
-          disableDefaultUI: true,
-          clickableIcons: false,
-          gestureHandling: "greedy",
-          styles: [
-            {
-              featureType: "poi",
-              elementType: "labels",
-              stylers: [{ visibility: "off" }]
-            },
-            {
-              featureType: "transit",
-              elementType: "labels",
-              stylers: [{ visibility: "off" }]
-            }
-          ]
-        }}
+        center={defaultCenter}
+        zoom={4}
+        onClick={handleMapClick}
+        options={mapOptions}
       >
         {guessLocation && (
           <MarkerF
             position={guessLocation}
-            icon={{
-              url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-            }}
+            icon={guessMarkerIcon}
           />
         )}
         {actualLocation && (
           <MarkerF
             position={actualLocation}
-            icon={{
-              url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-            }}
+            icon={actualMarkerIcon}
           />
         )}
-        {guessLocation && actualLocation && (
+        {polylinePath.length > 0 && (
           <PolylineF
-            path={[guessLocation, actualLocation]}
-            options={{
-              strokeColor: "#000",
-              strokeOpacity: 0.6,
-              strokeWeight: 2,
-              icons: [
-                {
-                  icon: { path: "M 0,-1 0,1", strokeOpacity: 1 },
-                  offset: "0",
-                  repeat: "10px",
-                },
-              ],
-            }}
+            path={polylinePath}
+            options={polylineOptions}
           />
         )}
       </GoogleMap>
