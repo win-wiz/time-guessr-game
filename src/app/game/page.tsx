@@ -194,15 +194,7 @@ export default function Game() {
           </div>
         )
       }
-       
-      {/* 可缩放背景图片 - 支持滚轮缩放和拖拽 */}
-      {/* {gameState === "guessing" && currentEvent && (
-        <GameImage 
-              imageUrl={currentEvent.image_url} 
-              eventName={currentEvent.event_name}
-            />
-      )} */}
-          
+                 
 
       {/* 顶部浮动状态栏 - 中性优雅风格 */}
       <header className="relative z-50 bg-gradient-to-r from-slate-900/40 via-gray-800/30 to-slate-900/40 backdrop-blur-2xl border-b border-white/10 pointer-events-auto">
@@ -231,54 +223,55 @@ export default function Game() {
       </header>
       
       {gameState === "guessing" && currentEvent && (
-        <div className="flex-1 relative z-10 pointer-events-none">
-          {/* 顶部紧凑信息条 - 中性风格 */}
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30">
-            <div className="bg-gradient-to-r from-slate-900/60 via-gray-800/50 to-slate-900/60 backdrop-blur-xl rounded-full px-8 py-3 border border-white/20 shadow-xl">
-              <div className="flex items-center gap-8 text-white">
-                {/* 事件信息 */}
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40">
-                    <Target className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-bold text-white">{currentEvent.event_name}</span>
-                    <span className="text-gray-300 ml-2">第 {currentRound}/{totalRounds} 轮</span>
-                  </div>
+        <div className="relative z-10 pointer-events-none flex-1">
+          {/* 中央图片区域 - 标红区域 */}
+          <div className="absolute w-1/2 left-1/2 top-20 transform -translate-x-1/2 z-20 pointer-events-auto" style={{ height: 'calc(100% - 400px)' }}>
+            <GameImage 
+              imageUrl={currentEvent.image_url} 
+              eventName={currentEvent.event_name}
+            />
+          </div>
+
+          {/* 左上角游戏提示 - 优化位置 */}
+          <div className="absolute top-6 left-6 z-30">
+            <div className="bg-gradient-to-br from-slate-900/80 via-gray-800/70 to-slate-900/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-xl max-w-sm">
+              <div className="flex items-center gap-3 text-white/90">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40 flex-shrink-0">
+                  <Target className="w-4 h-4 text-white" />
                 </div>
-                
-                {/* 时间 */}
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-yellow-400" />
-                  <span className={`font-bold ${timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
-                    {timeRemaining}s
-                  </span>
-                </div>
-                
-                {/* 位置状态 */}
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-400" />
-                  <span className={`text-sm font-medium ${guessLocation ? 'text-emerald-400' : 'text-gray-400'}`}>
-                    {guessLocation ? '✓ 已选择' : '未选择'}
-                  </span>
+                <div>
+                  <div className="text-sm font-bold text-white">{currentEvent.event_name}</div>
+                  <div className="text-xs text-blue-200/80">观察细节推测地点和时间 • 第 {currentRound}/{totalRounds} 轮</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 右侧年份选择器 - 中性风格 */}
-          <div className="absolute top-20 right-8 z-30 pointer-events-auto">
-            <div className="bg-gradient-to-br from-slate-900/70 via-gray-800/60 to-slate-900/70 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-xl">
+          {/* 右上角状态信息 - 紧凑布局 */}
+          <div className="absolute top-6 right-6 z-30 flex flex-col gap-3">
+            {/* 时间倒计时 */}
+            <div className="bg-gradient-to-br from-slate-900/80 via-gray-800/70 to-slate-900/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-xl">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                <div className="text-right">
+                  <div className={`text-lg font-bold ${timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+                    {timeRemaining}s
+                  </div>
+                  <div className="text-xs text-gray-300">剩余时间</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 年份选择器 - 紧凑版 */}
+            <div className="bg-gradient-to-br from-slate-900/80 via-gray-800/70 to-slate-900/80 backdrop-blur-xl rounded-xl p-4 border border-white/20 shadow-xl pointer-events-auto">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <Calendar className="w-4 h-4 text-blue-400" />
                   <span className="text-sm font-bold text-white">年份</span>
                 </div>
                 
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center shadow-xl mx-auto mb-3 border-2 border-blue-400/40">
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-white">{selectedYear}</div>
-                  </div>
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center shadow-xl mx-auto mb-3 border-2 border-blue-400/40">
+                  <div className="text-lg font-bold text-white">{selectedYear}</div>
                 </div>
                 
                 <input
@@ -293,6 +286,19 @@ export default function Game() {
                 <div className="flex justify-between text-xs text-gray-300">
                   <span>1900</span>
                   <span>2024</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 位置状态指示 */}
+            <div className="bg-gradient-to-br from-slate-900/80 via-gray-800/70 to-slate-900/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-xl">
+              <div className="flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                <div className="text-right">
+                  <div className={`text-sm font-bold ${guessLocation ? 'text-emerald-400' : 'text-gray-400'}`}>
+                    {guessLocation ? '已标记' : '未选择'}
+                  </div>
+                  <div className="text-xs text-gray-300">地图位置</div>
                 </div>
               </div>
             </div>
@@ -348,7 +354,7 @@ export default function Game() {
                 </div>
                 
                 <div className={`rounded-xl overflow-hidden border border-white/10 shadow-xl transition-all duration-500 ${
-                  isMapExpanded ? 'h-[500px]' : 'h-16'
+                  isMapExpanded ? 'h-[500px]' : 'h-32'
                 }`}>
                   <GameMap
                     onMapClick={handleMapClick}
@@ -362,15 +368,6 @@ export default function Game() {
           </div>
 
 
-          {/* 游戏提示 - 中性风格 */}
-          <div className="absolute top-20 left-8 z-30">
-            <div className="bg-gradient-to-br from-slate-900/50 via-gray-800/40 to-slate-900/50 backdrop-blur-lg rounded-xl px-4 py-2 border border-white/15 shadow-lg max-w-xs">
-              <div className="flex items-center gap-2 text-white/90">
-                <Target className="w-3 h-3 text-blue-400" />
-                <span className="text-xs font-medium">观察建筑、标志、服装等细节推测地点和时间</span>
-              </div>
-            </div>
-          </div>
 
           {/* 移动端适配 */}
           <div className="lg:hidden absolute inset-0 bg-black/90 backdrop-blur-sm flex flex-col z-40">
