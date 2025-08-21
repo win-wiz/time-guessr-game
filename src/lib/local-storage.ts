@@ -1,5 +1,6 @@
 // 本地存储服务 - 统一管理游戏数据的本地存储
 import { EventDetail } from './api-service';
+import { GameRoundManager } from './game-round-manager';
 
 // 存储键名常量
 const STORAGE_KEYS = {
@@ -261,6 +262,46 @@ export class GameProgressManager {
     };
 
     return this.saveProgress(updatedProgress);
+  }
+
+  // 同步轮次信息（从questionResult或其他来源）
+  static syncRoundFromQuestionResult(questionResult: any): boolean {
+    if (!questionResult || !questionResult.gameSessionId) return false;
+
+    const currentProgress = this.loadProgress();
+    if (!currentProgress || currentProgress.gameSessionId !== questionResult.gameSessionId) {
+      return false;
+    }
+
+    // 使用questionNumber作为准确的轮次信息
+    if (questionResult.questionNumber && questionResult.questionNumber !== currentProgress.currentRound) {
+      console.log(`Syncing round from questionResult: ${currentProgress.currentRound} -> ${questionResult.questionNumber}`);
+      
+      return this.updateProgress({
+        currentRound: questionResult.questionNumber
+      });
+    }
+
+    return true;
+  }
+
+  // 验证并修复轮次一致性
+  static validateAndFixRoundConsistency(gameSessionId: string, expectedRound: number): boolean {
+    const progress = this.loadProgress();
+    if (!progress || progress.gameSessionId !== gameSessionId) {
+      return false;
+    }
+
+    if (progress.currentRound !== expectedRound) {
+      console.warn(`Round inconsistency detected: stored=${progress.currentRound}, expected=${expectedRound}`);
+      
+      // 自动修复轮次不一致问题
+      return this.updateProgress({
+        currentRound: expectedRound
+      });
+    }
+
+    return true;
   }
 }
 

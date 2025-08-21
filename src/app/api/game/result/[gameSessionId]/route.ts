@@ -32,7 +32,7 @@ export async function GET(
   { params }: { params: { gameSessionId: string } }
 ) {
   try {
-    const { gameSessionId } = params;
+    const { gameSessionId } = await params;
     
     if (!gameSessionId) {
       return NextResponse.json({

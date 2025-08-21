@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { LoadingState } from "@/components/game/loading-state";
 import { GameAPIService } from "@/lib/api-service";
 import { QuestionResultDetail } from "@/components/game/question-result-detail";
+import { GameRoundManager } from "@/lib/game-round-manager";
 
 // 类型定义
 interface GameResult {
@@ -163,16 +164,61 @@ export default function GameResultPage() {
     router.push('/game');
   };
 
-  // 处理继续游戏
-  const handleContinueGame = () => {
+  // 处理继续游戏 - 改进currentRound同步
+  const handleContinueGame = async () => {
     const gameSessionId = searchParams.get('gameSessionId');
     const status = searchParams.get('status');
+    const currentRoundParam = searchParams.get('currentRound');
+    const totalRoundsParam = searchParams.get('totalRounds');
     
     // 如果游戏未完成，返回游戏页面继续
     if (status === 'submitted' && gameSessionId) {
-      router.push(`/game?gameSessionId=${gameSessionId}`);
+      // 尝试从questionResult获取准确的questionNumber
+      let nextRound = currentRoundParam ? parseInt(currentRoundParam) + 1 : 2;
+      
+      // 如果有questionResult，使用其questionNumber来确定下一轮
+      if (currentQuestionResult && currentQuestionResult.questionNumber) {
+        nextRound = currentQuestionResult.questionNumber + 1;
+        console.log(`Using questionResult.questionNumber: ${currentQuestionResult.questionNumber}, nextRound: ${nextRound}`);
+      } else {
+        console.log(`Using currentRoundParam: ${currentRoundParam}, nextRound: ${nextRound}`);
+      }
+      
+      // 检查是否还有下一题
+      const totalRounds = totalRoundsParam ? parseInt(totalRoundsParam) : 5;
+      if (nextRound > totalRounds) {
+        // 所有题目已完成，开始新游戏
+        console.log('All questions completed, starting new game');
+        router.push('/game');
+        return;
+      }
+      
+      console.log(`=== CONTINUE GAME ===`);
+      console.log(`GameSessionId: ${gameSessionId}`);
+      console.log(`Current round: ${currentRoundParam} -> Next round: ${nextRound}`);
+      console.log(`Total rounds: ${totalRounds}`);
+      
+      // 使用轮次管理器保存恢复信息
+      GameRoundManager.saveResumeInfo({
+        gameSessionId,
+        nextRound,
+        totalRounds,
+        timestamp: Date.now()
+      });
+      
+      // 清除当前页面的缓存，确保游戏页面重新加载
+      if (typeof window !== 'undefined') {
+        // 强制刷新游戏页面的状态
+        sessionStorage.setItem('force_reload_game', 'true');
+      }
+      
+      // 返回游戏页面，传递轮次信息
+      const gameUrl = `/game?resume=true&gameSessionId=${gameSessionId}&round=${nextRound}&totalRounds=${totalRounds}&timestamp=${Date.now()}`;
+      console.log(`Navigating to: ${gameUrl}`);
+      router.push(gameUrl);
     } else {
       // 否则开始新游戏
+      console.log('Starting new game');
       router.push('/game');
     }
   };
@@ -259,12 +305,34 @@ export default function GameResultPage() {
 
         {/* 当前题目详细结果 - 使用新的详细组件 */}
         {selectedQuestionResult && (
-          <QuestionResultDetail questionResult={selectedQuestionResult} />
+          <QuestionResultDetail 
+            questionResult={selectedQuestionResult} 
+            onNextQuestion={handleContinueGame}
+            hasNextQuestion={(() => {
+              const currentRoundParam = searchParams.get('currentRound');
+              const totalRoundsParam = searchParams.get('totalRounds');
+              const status = searchParams.get('status');
+              
+              // 如果游戏已完成，则没有下一题
+              if (status === 'completed') {
+                return false;
+              }
+              
+              // 计算下一轮数
+              let nextRound = currentRoundParam ? parseInt(currentRoundParam) + 1 : 2;
+              if (selectedQuestionResult && selectedQuestionResult.questionNumber) {
+                nextRound = selectedQuestionResult.questionNumber + 1;
+              }
+              
+              const totalRounds = totalRoundsParam ? parseInt(totalRoundsParam) : 5;
+              return nextRound <= totalRounds;
+            })()}
+          />
         )}
 
         {/* 所有题目汇总 - 只在游戏结果加载完成后显示 */}
         {gameResult && gameResult.questionSessions.length > 0 && (
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-8">
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-28 mt-10">
             <h2 className="text-2xl font-bold text-white mb-6">所有题目汇总</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -293,7 +361,7 @@ export default function GameResultPage() {
         )}
 
         {/* 操作按钮 */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {/* <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {searchParams.get('status') === 'submitted' ? (
             <>
               <button
@@ -323,7 +391,7 @@ export default function GameResultPage() {
           >
             分享结果
           </button>
-        </div>
+        </div> */}
       </div>
     </main>
   );

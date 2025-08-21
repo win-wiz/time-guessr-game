@@ -6,6 +6,7 @@ import { GameProgress } from "@/components/game-progress";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimplePreferences } from "./simple-preferences";
 import { GameScore } from "@/lib/local-storage";
+import { useRouter } from "next/navigation";
 
 interface GameHeaderProps {
   currentRound: number;
@@ -20,10 +21,13 @@ export const GameHeader = memo(function GameHeader({
   scores,
   onSettingsChange
 }: GameHeaderProps) {
+
+  const router = useRouter();
+
   return (
     <header className="relative z-50 bg-gradient-to-r from-slate-900/40 via-gray-800/30 to-slate-900/40 backdrop-blur-2xl border-b border-white/10 pointer-events-auto">
       <div className="flex justify-between items-center px-8 py-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => router.push('/')}>
           <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center shadow-2xl border-2 border-blue-400/30">
             <MapPin className="h-6 w-6 text-white" />
           </div>

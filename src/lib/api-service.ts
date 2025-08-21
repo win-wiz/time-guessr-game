@@ -263,6 +263,12 @@ export interface QuestionResult {
     imageUrl?: string;
     difficulty?: string;
   };
+  // 新增：下一题信息，用于同步currentRound
+  nextQuestion?: {
+    currentRound: number;
+    hasNextQuestion: boolean;
+    nextEventId?: string;
+  };
 }
 
 // 游戏API服务类

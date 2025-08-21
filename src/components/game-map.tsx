@@ -44,13 +44,30 @@ const mapOptions = {
   ]
 };
 
-const guessMarkerIcon = {
-  url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-};
+// 创建标记图标的函数，在组件内部调用以确保 google.maps 已加载
+const createGuessMarkerIcon = () => ({
+  url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="12" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
+      <circle cx="16" cy="16" r="6" fill="#ffffff"/>
+      <text x="16" y="20" text-anchor="middle" fill="#ef4444" font-size="8" font-weight="bold">你</text>
+    </svg>
+  `),
+  scaledSize: new google.maps.Size(32, 32),
+  anchor: new google.maps.Point(16, 16),
+});
 
-const actualMarkerIcon = {
-  url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-};
+const createActualMarkerIcon = () => ({
+  url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="12" fill="#22c55e" stroke="#ffffff" stroke-width="3"/>
+      <circle cx="16" cy="16" r="6" fill="#ffffff"/>
+      <text x="16" y="20" text-anchor="middle" fill="#22c55e" font-size="8" font-weight="bold">实</text>
+    </svg>
+  `),
+  scaledSize: new google.maps.Size(32, 32),
+  anchor: new google.maps.Point(16, 16),
+});
 
 export function GameMap({
   onMapClick,
@@ -133,13 +150,13 @@ export function GameMap({
         {guessLocation && (
           <MarkerF
             position={guessLocation}
-            icon={guessMarkerIcon}
+            icon={createGuessMarkerIcon()}
           />
         )}
         {actualLocation && (
           <MarkerF
             position={actualLocation}
-            icon={actualMarkerIcon}
+            icon={createActualMarkerIcon()}
           />
         )}
         {polylinePath.length > 0 && (
