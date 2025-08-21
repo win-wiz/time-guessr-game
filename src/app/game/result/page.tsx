@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { LoadingState } from "@/components/game/loading-state";
 import { GameAPIService } from "@/lib/api-service";
 import { QuestionResultDetail } from "@/components/game/question-result-detail";
@@ -76,8 +76,17 @@ export default function GameResultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 缓存URL参数，避免重复解析
+  const urlParams = useMemo(() => ({
+    gameSessionId: searchParams.get('gameSessionId'),
+    questionSessionId: searchParams.get('questionSessionId'),
+    status: searchParams.get('status'),
+    currentRound: searchParams.get('currentRound'),
+    totalRounds: searchParams.get('totalRounds')
+  }), [searchParams]);
+
   // 获取游戏结果 - 使用统一API服务
-  const fetchGameResult = async (gameSessionId: string): Promise<void> => {
+  const fetchGameResult = useCallback(async (gameSessionId: string): Promise<void> => {
     try {
       const result = await GameAPIService.getGameResult(gameSessionId);
       setGameResult(result);
@@ -85,10 +94,10 @@ export default function GameResultPage() {
       console.error('Error fetching game result:', error);
       setError(error instanceof Error ? error.message : '获取游戏结果失败');
     }
-  };
+  }, []);
 
   // 获取单题详细结果 - 使用统一API服务
-  const fetchQuestionResult = async (questionSessionId: string): Promise<QuestionResult | null> => {
+  const fetchQuestionResult = useCallback(async (questionSessionId: string): Promise<QuestionResult | null> => {
     try {
       const result = await GameAPIService.getQuestionResult(questionSessionId);
       return result;
@@ -96,12 +105,10 @@ export default function GameResultPage() {
       console.error('Error fetching question result:', error);
       return null;
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const gameSessionId = searchParams.get('gameSessionId');
-    const questionSessionId = searchParams.get('questionSessionId');
-    const status = searchParams.get('status');
+    const { gameSessionId, questionSessionId, status } = urlParams;
 
     if (!gameSessionId) {
       router.push('/game');
@@ -142,10 +149,10 @@ export default function GameResultPage() {
     };
 
     loadResults();
-  }, [searchParams, router]);
+  }, [urlParams, router, fetchGameResult, fetchQuestionResult]);
 
   // 处理选择其他题目
-  const handleSelectQuestion = async (questionSessionId: string) => {
+  const handleSelectQuestion = useCallback(async (questionSessionId: string) => {
     try {
       setLoading(true);
       const result = await fetchQuestionResult(questionSessionId);
@@ -157,36 +164,33 @@ export default function GameResultPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchQuestionResult]);
 
   // 处理重新开始游戏
-  const handlePlayAgain = () => {
+  const handlePlayAgain = useCallback(() => {
     router.push('/game');
-  };
+  }, [router]);
 
   // 处理继续游戏 - 改进currentRound同步
-  const handleContinueGame = async () => {
-    const gameSessionId = searchParams.get('gameSessionId');
-    const status = searchParams.get('status');
-    const currentRoundParam = searchParams.get('currentRound');
-    const totalRoundsParam = searchParams.get('totalRounds');
+  const handleContinueGame = useCallback(async () => {
+    const { gameSessionId, status, currentRound, totalRounds } = urlParams;
     
     // 如果游戏未完成，返回游戏页面继续
     if (status === 'submitted' && gameSessionId) {
       // 尝试从questionResult获取准确的questionNumber
-      let nextRound = currentRoundParam ? parseInt(currentRoundParam) + 1 : 2;
+      let nextRound = currentRound ? parseInt(currentRound) + 1 : 2;
       
       // 如果有questionResult，使用其questionNumber来确定下一轮
       if (currentQuestionResult && currentQuestionResult.questionNumber) {
         nextRound = currentQuestionResult.questionNumber + 1;
         console.log(`Using questionResult.questionNumber: ${currentQuestionResult.questionNumber}, nextRound: ${nextRound}`);
       } else {
-        console.log(`Using currentRoundParam: ${currentRoundParam}, nextRound: ${nextRound}`);
+        console.log(`Using currentRoundParam: ${currentRound}, nextRound: ${nextRound}`);
       }
       
       // 检查是否还有下一题
-      const totalRounds = totalRoundsParam ? parseInt(totalRoundsParam) : 5;
-      if (nextRound > totalRounds) {
+      const totalRoundsNum = totalRounds ? parseInt(totalRounds) : 5;
+      if (nextRound > totalRoundsNum) {
         // 所有题目已完成，开始新游戏
         console.log('All questions completed, starting new game');
         router.push('/game');
@@ -195,14 +199,14 @@ export default function GameResultPage() {
       
       console.log(`=== CONTINUE GAME ===`);
       console.log(`GameSessionId: ${gameSessionId}`);
-      console.log(`Current round: ${currentRoundParam} -> Next round: ${nextRound}`);
-      console.log(`Total rounds: ${totalRounds}`);
+      console.log(`Current round: ${currentRound} -> Next round: ${nextRound}`);
+      console.log(`Total rounds: ${totalRoundsNum}`);
       
       // 使用轮次管理器保存恢复信息
       GameRoundManager.saveResumeInfo({
         gameSessionId,
         nextRound,
-        totalRounds,
+        totalRounds: totalRoundsNum,
         timestamp: Date.now()
       });
       
@@ -213,7 +217,7 @@ export default function GameResultPage() {
       }
       
       // 返回游戏页面，传递轮次信息
-      const gameUrl = `/game?resume=true&gameSessionId=${gameSessionId}&round=${nextRound}&totalRounds=${totalRounds}&timestamp=${Date.now()}`;
+      const gameUrl = `/game?resume=true&gameSessionId=${gameSessionId}&round=${nextRound}&totalRounds=${totalRoundsNum}&timestamp=${Date.now()}`;
       console.log(`Navigating to: ${gameUrl}`);
       router.push(gameUrl);
     } else {
@@ -221,10 +225,10 @@ export default function GameResultPage() {
       console.log('Starting new game');
       router.push('/game');
     }
-  };
+  }, [urlParams, currentQuestionResult, router]);
 
   // 处理分享结果
-  const handleShare = () => {
+  const handleShare = useCallback(() => {
     if (gameResult) {
       const shareText = `我在 Time Guessr 中获得了 ${gameResult.totalScore} 分！平均分：${gameResult.averageScore}`;
       if (navigator.share) {
@@ -250,7 +254,26 @@ export default function GameResultPage() {
         alert('结果已复制到剪贴板！');
       }
     }
-  };
+  }, [gameResult, selectedQuestionResult]);
+
+  // 计算是否有下一题 - 使用useMemo缓存计算结果
+  const hasNextQuestion = useMemo(() => {
+    const { currentRound, totalRounds, status } = urlParams;
+    
+    // 如果游戏已完成，则没有下一题
+    if (status === 'completed') {
+      return false;
+    }
+    
+    // 计算下一轮数
+    let nextRound = currentRound ? parseInt(currentRound) + 1 : 2;
+    if (selectedQuestionResult && selectedQuestionResult.questionNumber) {
+      nextRound = selectedQuestionResult.questionNumber + 1;
+    }
+    
+    const totalRoundsNum = totalRounds ? parseInt(totalRounds) : 5;
+    return nextRound <= totalRoundsNum;
+  }, [urlParams, selectedQuestionResult]);
 
   if (loading && !selectedQuestionResult) {
     return <LoadingState message="正在加载结果数据..." />;
@@ -308,25 +331,7 @@ export default function GameResultPage() {
           <QuestionResultDetail 
             questionResult={selectedQuestionResult} 
             onNextQuestion={handleContinueGame}
-            hasNextQuestion={(() => {
-              const currentRoundParam = searchParams.get('currentRound');
-              const totalRoundsParam = searchParams.get('totalRounds');
-              const status = searchParams.get('status');
-              
-              // 如果游戏已完成，则没有下一题
-              if (status === 'completed') {
-                return false;
-              }
-              
-              // 计算下一轮数
-              let nextRound = currentRoundParam ? parseInt(currentRoundParam) + 1 : 2;
-              if (selectedQuestionResult && selectedQuestionResult.questionNumber) {
-                nextRound = selectedQuestionResult.questionNumber + 1;
-              }
-              
-              const totalRounds = totalRoundsParam ? parseInt(totalRoundsParam) : 5;
-              return nextRound <= totalRounds;
-            })()}
+            hasNextQuestion={hasNextQuestion}
           />
         )}
 
@@ -359,39 +364,6 @@ export default function GameResultPage() {
             </div>
           </div>
         )}
-
-        {/* 操作按钮 */}
-        {/* <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {searchParams.get('status') === 'submitted' ? (
-            <>
-              <button
-                onClick={handleContinueGame}
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                继续游戏
-              </button>
-              <button
-                onClick={handlePlayAgain}
-                className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                重新开始
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handlePlayAgain}
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-            >
-              再玩一次
-            </button>
-          )}
-          <button
-            onClick={handleShare}
-            className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
-          >
-            分享结果
-          </button>
-        </div> */}
       </div>
     </main>
   );

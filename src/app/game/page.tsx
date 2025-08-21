@@ -320,6 +320,10 @@ export default function Game() {
     if (prevState.gameState !== newState.gameState) {
       console.log(`State: ${prevState.gameState} → ${newState.gameState}`);
     }
+    if (prevState.scores.length !== newState.scores.length) {
+      console.log(`[GameStateRef] Scores count: ${prevState.scores.length} → ${newState.scores.length}`);
+      console.log(`[GameStateRef] Total score: ${newState.scores.reduce((sum, s) => sum + s.score, 0)}`);
+    }
     
     gameStateRef.current = newState;
   });
@@ -429,6 +433,7 @@ export default function Game() {
       setTotalRounds(totalQuestions);
       setTimeRemaining(timeLimit || settings.defaultTimeLimit);
       setGameStartTime(Date.now());
+      setScores([]); // 初始化分数数组
       
       // 2. 根据 currentRound 获取当前题目 eventId
       const currentEventId = eventIds[currentQuestion - 1];
@@ -646,8 +651,14 @@ export default function Game() {
         };
         
         // 更新分数状态
-        setScores(prev => [...prev, newScore]);
-        console.log('Updated scores with new result:', newScore);
+        setScores(prev => {
+          const updatedScores = [...prev, newScore];
+          console.log('[ScoreUpdate] Previous scores:', prev);
+          console.log('[ScoreUpdate] New score:', newScore);
+          console.log('[ScoreUpdate] Updated scores array:', updatedScores);
+          console.log('[ScoreUpdate] Total score now:', updatedScores.reduce((sum, s) => sum + s.score, 0));
+          return updatedScores;
+        });
       } catch (error) {
         console.error('Failed to fetch question result for immediate score update:', error);
       }
@@ -812,7 +823,7 @@ export default function Game() {
       setIsLoading(false);
       
       // 保存更新后的进度
-      const updatedProgress = { ...progress, currentRound: roundToLoad };
+      const updatedProgress = { ...progress, currentRound: roundToLoad, scores: updatedScores };
       GameProgressManager.saveProgress(updatedProgress);
       
     } catch (error) {
@@ -1110,7 +1121,13 @@ export default function Game() {
 
   // 如果正在加载，显示加载状态
   if (gameState === "loading" || isLoading) {
-    return <LoadingState />;
+    return (
+      <LoadingState 
+        currentRound={currentRound}
+        totalRounds={totalRounds}
+        scores={scores}
+      />
+    );
   }
 
   return (

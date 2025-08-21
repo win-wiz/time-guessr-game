@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { Clock, Calendar, MapPin } from "lucide-react";
 
 interface DesktopStatusPanelProps {
@@ -21,6 +21,11 @@ export const DesktopStatusPanel = memo(function DesktopStatusPanel({
   const handleYearChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     onYearChange(parseInt(e.target.value));
   }, [onYearChange]);
+
+  const backgroundStyle = useMemo(() => ({
+    WebkitAppearance: 'none' as const,
+    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((selectedYear - 1900) / (currentYear - 1900)) * 100}%, #4b5563 ${((selectedYear - 1900) / (currentYear - 1900)) * 100}%, #4b5563 100%)`
+  }), [selectedYear, currentYear]);
 
   return (
     <div className="hidden md:flex absolute top-6 right-6 z-30 flex-col gap-3">
@@ -55,7 +60,8 @@ export const DesktopStatusPanel = memo(function DesktopStatusPanel({
             max={currentYear}
             value={selectedYear}
             onChange={handleYearChange}
-            className="w-full h-2 bg-gray-600/60 rounded-full appearance-none cursor-pointer accent-blue-500 mb-2"
+            className="w-full h-3 bg-gray-600/60 rounded-full appearance-none cursor-pointer accent-blue-500 mb-2"
+            style={backgroundStyle}
           />
           
           <div className="flex justify-between text-xs text-gray-300">

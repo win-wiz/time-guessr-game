@@ -2,6 +2,7 @@
 
 import { memo, useMemo } from "react";
 import { MapPin, Clock, Calendar, Target } from "lucide-react";
+import { RoundScoreDisplay } from "@/components/game/round-score-display";
 
 // 优化的功能卡片数据
 const FEATURE_CARDS = [
@@ -133,7 +134,15 @@ const AnimatedBackground = memo(function AnimatedBackground() {
 });
 
 // 优化的头部组件
-const LoadingHeader = memo(function LoadingHeader() {
+const LoadingHeader = memo(function LoadingHeader({
+  currentRound = 1,
+  totalRounds = 5,
+  scores = []
+}: {
+  currentRound?: number;
+  totalRounds?: number;
+  scores?: any[];
+}) {
   return (
     <header className="relative z-50 bg-gradient-to-r from-slate-900/40 via-gray-800/30 to-slate-900/40 backdrop-blur-2xl border-b border-white/10">
       <div className="flex justify-between items-center px-8 py-4">
@@ -150,21 +159,34 @@ const LoadingHeader = memo(function LoadingHeader() {
         </div>
         
         <div className="flex items-center gap-8">
-          {/* 进度条骨架 */}
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-300">Round 1/5</div>
-            <div className="w-32 h-2 bg-gray-700/50 rounded-full overflow-hidden">
-              <div className="w-1/5 h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
-            </div>
-            <div className="text-sm text-gray-300">Score: 0</div>
-          </div>
+          {/* 使用统一的Round和Score显示组件 */}
+          <RoundScoreDisplay
+            currentRound={currentRound}
+            totalRounds={totalRounds}
+            scores={scores}
+            variant="loading"
+            showProgress={true}
+            className="animate-pulse"
+          />
         </div>
       </div>
     </header>
   );
 });
 
-export const LoadingState = memo(function LoadingState({ message = "正在准备游戏" }: { message?: string }) {
+interface LoadingStateProps {
+  message?: string;
+  currentRound?: number;
+  totalRounds?: number;
+  scores?: any[];
+}
+
+export const LoadingState = memo(function LoadingState({ 
+  message = "正在准备游戏",
+  currentRound = 1,
+  totalRounds = 5,
+  scores = []
+}: LoadingStateProps) {
   // 使用 useMemo 缓存功能卡片渲染
   const featureCards = useMemo(() => 
     FEATURE_CARDS.map((card) => (
@@ -185,7 +207,11 @@ export const LoadingState = memo(function LoadingState({ message = "正在准备
       <AnimatedBackground />
 
       {/* 顶部导航栏骨架 */}
-      <LoadingHeader />
+      <LoadingHeader 
+        currentRound={currentRound}
+        totalRounds={totalRounds}
+        scores={scores}
+      />
 
       {/* 主要内容区域 */}
       <div className="flex-1 relative z-10 flex items-center justify-center">

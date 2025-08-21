@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { MapPin } from "lucide-react";
-import { GameProgress } from "@/components/game-progress";
+import { RoundScoreDisplay } from "@/components/game/round-score-display";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimplePreferences } from "./simple-preferences";
 import { GameScore } from "@/lib/local-storage";
@@ -40,10 +40,12 @@ export const GameHeader = memo(function GameHeader({
         </div>
         
         <div className="flex items-center gap-4">
-          <GameProgress
+          <RoundScoreDisplay
             currentRound={currentRound}
             totalRounds={totalRounds}
             scores={scores}
+            variant="default"
+            showProgress={true}
           />
           <SimplePreferences onSettingsChange={onSettingsChange} />
           <ThemeToggle />

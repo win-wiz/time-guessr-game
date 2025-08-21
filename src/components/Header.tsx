@@ -8,12 +8,12 @@ export default function Header() {
       <div className="container mx-auto flex justify-between items-center p-4">
         <div className="flex items-center gap-2">
           <MapPin className="h-6 w-6 text-[#CF142B]" />
-          <h1 className="text-xl font-bold">CalgaryGuessr</h1>
+          <h1 className="text-xl font-bold">TimeGuessr</h1>
         </div>
         <div className="flex items-center gap-4">
           <nav className="hidden md:flex gap-6">
             <Link
-              href="/"
+              href="/game"
               className="transition-colors hover:text-[#CF142B] dark:hover:text-[#CF142B]"
             >
               Play
@@ -24,12 +24,12 @@ export default function Header() {
             >
               Leaderboard
             </Link>
-            <Link
+            {/* <Link
               href="/about"
               className="transition-colors hover:text-[#CF142B] dark:hover:text-[#CF142B]"
             >
               About
-            </Link>
+            </Link> */}
           </nav>
           <ThemeToggle />
         </div>

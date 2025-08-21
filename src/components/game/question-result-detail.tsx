@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useMemo } from "react";
 // import Image from "next/image";
 import { MapPin, Clock, Calendar, Award, Target, Navigation } from "lucide-react";
 import { GameMap } from "@/components/game-map";
@@ -109,22 +109,28 @@ interface QuestionResultDetailProps {
   hasNextQuestion?: boolean; // 新增：是否还有下一题
 }
 
-export const QuestionResultDetail: React.FC<QuestionResultDetailProps> = ({ 
+export const QuestionResultDetail = memo<QuestionResultDetailProps>(function QuestionResultDetail({ 
   questionResult, 
   onClose,
   onNextQuestion,
   hasNextQuestion = true
-}) => {
+}) {
   const [eventDetails, setEventDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 计算距离
-  const distance = calculateDistance(
+  // 计算距离 - 使用useMemo缓存计算结果
+  const distance = useMemo(() => calculateDistance(
     questionResult.guessedLocation.lat,
     questionResult.guessedLocation.lng,
     questionResult.actualLocation.lat,
     questionResult.actualLocation.lng
+  ), [questionResult.guessedLocation, questionResult.actualLocation]);
+
+  // 缓存年份差值计算
+  const yearDifference = useMemo(() => 
+    Math.abs(questionResult.guessedYear - questionResult.actualYear),
+    [questionResult.guessedYear, questionResult.actualYear]
   );
 
   useEffect(() => {
@@ -138,6 +144,19 @@ export const QuestionResultDetail: React.FC<QuestionResultDetailProps> = ({
       setLoading(false);
     }
   }, [questionResult]);
+
+  // 缓存等级颜色计算
+  const rankColorClass = useMemo(() => getRankColor(questionResult.scoringDetails.rank), [questionResult.scoringDetails.rank]);
+
+  // 缓存成就徽章
+  const achievementBadges = useMemo(() => {
+    if (!questionResult.scoringDetails.achievements?.length) return null;
+    return questionResult.scoringDetails.achievements.map((achievement, index) => (
+      <span key={index} className="inline-block bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full text-xs border border-yellow-500/30">
+        🏆 {achievement}
+      </span>
+    ));
+  }, [questionResult.scoringDetails.achievements]);
 
   // 获取等级对应的颜色
   const getRankColor = (rank: string) => {
@@ -191,7 +210,7 @@ export const QuestionResultDetail: React.FC<QuestionResultDetailProps> = ({
                   <div className="w-px h-8 bg-gray-600"></div>
                   <div className="text-center">
                     <div className="text-xs text-gray-400">等级</div>
-                    <div className={`text-xl font-bold ${getRankColor(questionResult.scoringDetails.rank)}`}>
+                    <div className={`text-xl font-bold ${rankColorClass}`}>
                       {questionResult.scoringDetails.rank}
                     </div>
                   </div>
@@ -208,7 +227,7 @@ export const QuestionResultDetail: React.FC<QuestionResultDetailProps> = ({
             </div>
             <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-2 text-center border border-purple-500/30">
               <div className="text-xs text-purple-300">年份误差</div>
-              <div className="text-sm font-bold text-white">±{Math.abs(questionResult.guessedYear - questionResult.actualYear)}</div>
+              <div className="text-sm font-bold text-white">±{yearDifference}</div>
             </div>
             <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-2 text-center border border-green-500/30">
               <div className="text-xs text-green-300">位置距离</div>
@@ -538,4 +557,4 @@ export const QuestionResultDetail: React.FC<QuestionResultDetailProps> = ({
       </div>
     </div>
   );
-};
+});
