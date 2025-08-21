@@ -58,8 +58,12 @@ export function GameMap({
   actualLocation,
   isGuessing,
 }: GameMapProps) {
+  // 直接使用硬编码的 API 密钥，确保地图能够正常加载
+  // 注意：在生产环境中，应该使用环境变量
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+  
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: apiKey,
   });
 
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {

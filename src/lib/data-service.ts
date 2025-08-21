@@ -16,16 +16,16 @@ export interface APIEventResponse {
 // 应用内部使用的事件数据结构
 export interface TimeGuessrEvent {
   id: number;
-  city: string;
-  latitude: number;
-  longitude: number;
-  year: number;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  year?: number;
   event_name: string;
   event_detail: string;
   event_description: string;
-  image_prompt: string;
+  image_prompt?: string;
   image_url: string;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface Location {
@@ -99,16 +99,16 @@ export function transformAPIEventToTimeGuessrEvent(apiEvent: APIEventResponse): 
   
   return {
     id: apiEvent.id,
-    city: apiEvent.city,
-    latitude: coordinates.latitude,
-    longitude: coordinates.longitude,
-    year: year,
+    // city: apiEvent.city,
+    // latitude: coordinates.latitude,
+    // longitude: coordinates.longitude,
+    // year: year,
     event_name: apiEvent.event_name,
     event_detail: apiEvent.event_detail,
     event_description: apiEvent.event_descript, // 映射字段名
-    image_prompt: apiEvent.image_prompt,
+    // image_prompt: apiEvent.image_prompt,
     image_url: apiEvent.image_url.trim().replace(/^`|`$/g, ''), // 移除可能的反引号
-    created_at: apiEvent.created_at
+    // created_at: apiEvent.created_at
   };
 }
 
@@ -257,30 +257,62 @@ export async function fetchVerifiedLocationsFromAPI(count: number = 10): Promise
 }
 
 /**
- * 向第三方API提交新的事件数据
- * @param eventData 事件数据
- * @returns Promise<{success: boolean, id?: number}>
+ * 直接调用第三方游戏API - 开始游戏
  */
-export async function submitEventToAPI(eventData: Omit<TimeGuessrEvent, 'id' | 'created_at'>): Promise<{success: boolean, id?: number}> {
+export async function startGameDirect(request: {
+  gameMode: 'timed' | 'untimed';
+  questionCount: number;
+  timeLimit?: number;
+}): Promise<any> {
   try {
-    const response = await fetch(`${API_BASE_URL}/events`, {
+    const response = await fetch(`${API_BASE_URL}/game/start`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${API_KEY}`,
       },
-      body: JSON.stringify(eventData),
+      body: JSON.stringify(request),
     });
 
     if (!response.ok) {
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
 
-    const result = await response.json();
-    return { success: true, id: result.id };
+    return await response.json();
   } catch (error) {
-    console.error('Error submitting event to API:', error);
-    return { success: false };
+    console.error('Error starting game:', error);
+    throw error;
+  }
+}
+
+/**
+ * 直接调用第三方游戏API - 提交答案
+ */
+export async function submitAnswerDirect(request: {
+  gameSessionId: string;
+  eventId: string;
+  guessedYear: number;
+  guessedLocation?: { lat: number; lng: number; };
+  answerTime?: number;
+}): Promise<any> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/game/submit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error submitting answer:', error);
+    throw error;
   }
 }
 
@@ -319,6 +351,8 @@ export interface UserGuess {
   guessedLat: number;
   guessedLng: number;
   guessedYear: number;
+  answerTime: number; // 用户回答问题所用的时间（毫秒）
+  gameMode: 'timed' | 'untimed';
 }
 
 /**
@@ -342,7 +376,8 @@ export interface VerificationResult {
  */
 export async function submitGuessToAPI(guess: UserGuess): Promise<VerificationResult> {
   try {
-    const response = await fetch(`${API_BASE_URL}/verify-guess`, {
+    // 直接调用第三方接口 /game/submit
+    const response = await fetch(`${API_BASE_URL}/game/submit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
