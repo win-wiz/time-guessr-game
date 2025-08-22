@@ -1,6 +1,6 @@
 import { baseURL } from '@/lib/utils';
 import { NextRequest, NextResponse } from 'next/server';
-
+export const runtime = 'edge';
 interface StartGameRequest {
   gameMode: 'timed' | 'untimed';
   questionCount: number;

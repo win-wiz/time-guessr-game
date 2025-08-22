@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { baseURL, API_KEY } from '@/lib/utils';
-
+export const runtime = 'edge';
 interface SubmitAnswerRequest {
   gameSessionId: string;
   eventId: string;

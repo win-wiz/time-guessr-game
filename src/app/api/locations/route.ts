@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchVerifiedLocationsFromAPI, submitLocationToAPI } from "@/lib/data-service";
-
+export const runtime = 'edge';
 // 备用位置数据 - 当第三方API不可用时使用
 const fallbackLocations = [
   { lat: 51.0447, lng: -114.0719 }, // Calgary downtown

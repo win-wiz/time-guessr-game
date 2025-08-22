@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'; 
 import { API_KEY, baseURL } from '@/lib/utils';
 
+export const runtime = 'edge';
 // 事件详情响应接口
 interface EventDetailResponse {
   success: boolean;

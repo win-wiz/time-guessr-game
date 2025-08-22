@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+export const runtime = 'edge';
 interface GameResultResponse {
   success: boolean;
   data: {

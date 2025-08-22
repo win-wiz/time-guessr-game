@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { API_KEY, baseURL } from '@/lib/utils';
-
+export const runtime = 'edge';
 interface QuestionResultResponse {
   success: boolean;
   data?: {

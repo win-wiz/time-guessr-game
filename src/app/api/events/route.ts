@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { transformAPIEventToTimeGuessrEvent, APIEventResponse } from "@/lib/data-service";
+// import { transformAPIEventToTimeGuessrEvent, APIEventResponse } from "@/lib/data-service";
 import { baseURL } from "@/lib/utils";
 
-
+export const runtime = 'edge';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
