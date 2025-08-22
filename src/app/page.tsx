@@ -1,5 +1,5 @@
 import Header from "@/components/Header";
-import { HeroSection, GameFeatures, HowToPlay, ProTips, FAQ } from "@/components/home";
+import { HeroSection, GameFeatures, HowToPlay, ProTips, FAQ, CallToAction } from "@/components/home";
 
 export default function Home() {
   return (
@@ -10,6 +10,7 @@ export default function Home() {
       <HowToPlay />
       <ProTips />
       <FAQ />
+      <CallToAction />
     </main>
   );
 }
