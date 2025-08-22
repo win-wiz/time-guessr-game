@@ -45,6 +45,17 @@ export async function POST(request: NextRequest) {
 
     console.log('提交答案请求：', body);
 
+    if (!baseURL) {
+      console.error('NEXT_PUBLIC_API_BASE_URL 环境变量未配置');
+      return NextResponse.json({
+        success: false,
+        error: {
+          type: 'CONFIGURATION_ERROR',
+          message: 'API base URL not configured',
+        }
+      }, { status: 500 });
+    }
+
     // 调用第三方API提交答案
     const apiResponse = await fetch(`${baseURL}/game/submit`, {
       method: 'POST',

@@ -40,6 +40,18 @@ export async function GET(
 
     console.log('eventId==========>>>>>:', eventId, '\n\n');
 
+    if (!baseURL) {
+      console.error('NEXT_PUBLIC_API_BASE_URL 环境变量未配置');
+      return NextResponse.json({
+        success: false,
+        error: {
+          type: 'CONFIGURATION_ERROR',
+          message: 'API base URL not configured',
+          code: 500
+        }
+      }, { status: 500 });
+    }
+
     // 调用第三方API获取事件详情
     const thirdPartyResponse = await fetch(`${baseURL}/events/${eventId}`, {
       method: 'GET',

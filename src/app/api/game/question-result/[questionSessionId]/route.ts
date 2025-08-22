@@ -64,6 +64,18 @@ export async function GET(
 
     console.log(`获取题目结果，questionSessionId: ${questionSessionId}`);
 
+    if (!baseURL) {
+      console.error('NEXT_PUBLIC_API_BASE_URL 环境变量未配置');
+      return NextResponse.json({
+        success: false,
+        error: {
+          type: 'CONFIGURATION_ERROR',
+          message: 'API base URL not configured',
+          code: 500
+        }
+      }, { status: 500 });
+    }
+
     // 调用第三方API获取题目结果
     const thirdPartyResponse = await fetch(`${baseURL}/game/question-result/${questionSessionId}`, {
       method: 'GET',

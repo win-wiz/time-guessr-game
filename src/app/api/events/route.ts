@@ -12,23 +12,38 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing required parameter: eventId' }, { status: 400 });
     }
     
-    const transformedEvents = await fetch(`${baseURL}/events/${eventId}`);
-    
-    try {
-      
-       console.log('获取事件信息====》》', transformedEvents.json());
-       return NextResponse.json(transformedEvents);
-      
-    } catch (apiError) {
-      console.warn('第三方API调用失败，使用备用数据:', apiError);
+    if (!baseURL) {
+      console.error('NEXT_PUBLIC_API_BASE_URL 环境变量未配置');
       return NextResponse.json({
         success: false,
-        error: 'Failed to fetch events from API',
-      });
+        error: 'API base URL not configured',
+      }, { status: 500 });
     }
+    
+    const response = await fetch(`${baseURL}/events/${eventId}`);
+    
+    if (!response.ok) {
+      console.error(`第三方API返回错误状态: ${response.status} ${response.statusText}`);
+      return NextResponse.json({
+        success: false,
+        error: `Third-party API error: ${response.status}`,
+      }, { status: response.status });
+    }
+    
+    const eventData = await response.json();
+    console.log('获取事件信息成功:', eventData);
+    
+    return NextResponse.json({
+      success: true,
+      data: eventData
+    });
+      
   } catch (error) {
     console.error('API路由错误:', error);
-    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to fetch events' 
+    }, { status: 500 });
   }
 }
 
