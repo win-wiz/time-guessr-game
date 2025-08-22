@@ -78,6 +78,25 @@ export function GameMap({
   // 直接使用硬编码的 API 密钥，确保地图能够正常加载
   // 注意：在生产环境中，应该使用环境变量
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+
+  // 动态计算地图中心点：优先使用用户选择的位置，其次是实际位置，最后使用默认位置
+  const mapCenter = useMemo(() => {
+    if (guessLocation) {
+      return guessLocation;
+    }
+    if (actualLocation) {
+      return actualLocation;
+    }
+    return defaultCenter;
+  }, [guessLocation, actualLocation]);
+
+  // 动态计算缩放级别：如果有具体位置则放大，否则使用默认缩放
+  const mapZoom = useMemo(() => {
+    if (guessLocation || actualLocation) {
+      return 10; // 放大到城市级别
+    }
+    return 4; // 默认缩放级别
+  }, [guessLocation, actualLocation]);
   
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey,
@@ -142,8 +161,8 @@ export function GameMap({
     <div className="w-full h-full relative" style={{ minHeight: '200px' }}>
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={defaultCenter}
-        zoom={4}
+        center={mapCenter}
+        zoom={mapZoom}
         onClick={handleMapClick}
         options={mapOptions}
       >

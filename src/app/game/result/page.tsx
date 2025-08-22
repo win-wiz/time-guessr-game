@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, Suspense } from "react";
 import { LoadingState } from "@/components/game/loading-state";
 import { GameAPIService } from "@/lib/api-service";
 import { QuestionResultDetail } from "@/components/game/question-result-detail";
@@ -67,7 +67,8 @@ interface QuestionResult {
   status: 'completed';
 }
 
-export default function GameResultPage() {
+// 内部组件，处理 useSearchParams
+function GameResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
@@ -366,5 +367,14 @@ export default function GameResultPage() {
         )}
       </div>
     </main>
+  );
+}
+
+// 主组件，用 Suspense 包装
+export default function GameResultPage() {
+  return (
+    <Suspense fallback={<LoadingState message="正在加载页面..." />}>
+      <GameResultContent />
+    </Suspense>
   );
 }
