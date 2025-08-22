@@ -1,13 +1,13 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState, useMemo, useCallback, Suspense } from "react";
+import { useEffect, useState, useMemo, useCallback, Suspense, memo, useRef } from "react";
 import { LoadingState } from "@/components/game/loading-state";
 import { GameAPIService } from "@/lib/api-service";
 import { QuestionResultDetail } from "@/components/game/question-result-detail";
 import { GameRoundManager } from "@/lib/game-round-manager";
 
-// 类型定义
+// Type definitions
 interface GameResult {
   gameSessionId: string;
   totalScore: number;
@@ -67,8 +67,8 @@ interface QuestionResult {
   status: 'completed';
 }
 
-// 内部组件，处理 useSearchParams
-function GameResultContent() {
+// Internal component that handles useSearchParams
+const GameResultContent = memo(function GameResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
@@ -76,8 +76,11 @@ function GameResultContent() {
   const [selectedQuestionResult, setSelectedQuestionResult] = useState<QuestionResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use ref to store stable references
+  const loadingRef = useRef(false);
 
-  // 缓存URL参数，避免重复解析
+  // Cache URL parameters to avoid repeated parsing
   const urlParams = useMemo(() => ({
     gameSessionId: searchParams.get('gameSessionId'),
     questionSessionId: searchParams.get('questionSessionId'),
@@ -86,18 +89,18 @@ function GameResultContent() {
     totalRounds: searchParams.get('totalRounds')
   }), [searchParams]);
 
-  // 获取游戏结果 - 使用统一API服务
+  // Fetch game result - using unified API service
   const fetchGameResult = useCallback(async (gameSessionId: string): Promise<void> => {
     try {
       const result = await GameAPIService.getGameResult(gameSessionId);
       setGameResult(result);
     } catch (error) {
       console.error('Error fetching game result:', error);
-      setError(error instanceof Error ? error.message : '获取游戏结果失败');
+      setError(error instanceof Error ? error.message : 'Failed to fetch game result');
     }
   }, []);
 
-  // 获取单题详细结果 - 使用统一API服务
+  // Fetch single question detailed result - using unified API service
   const fetchQuestionResult = useCallback(async (questionSessionId: string): Promise<QuestionResult | null> => {
     try {
       const result = await GameAPIService.getQuestionResult(questionSessionId);
@@ -116,19 +119,25 @@ function GameResultContent() {
       return;
     }
 
+    // Prevent duplicate loading
+    if (loadingRef.current) {
+      return;
+    }
+
     const loadResults = async () => {
+      loadingRef.current = true;
       setLoading(true);
       
       try {
-        // 只有当游戏完成时才获取游戏总结
+        // Only fetch game summary when game is completed
         if (status === 'completed') {
           fetchGameResult(gameSessionId).catch(error => {
             console.error('Error fetching game result:', error);
-            // 即使游戏结果获取失败，也继续加载问题结果
+            // Continue loading question results even if game result fails
           });
         }
         
-        // 立即获取问题结果
+        // Immediately fetch question result
         if (questionSessionId) {
           try {
             const questionResult = await fetchQuestionResult(questionSessionId);
@@ -138,22 +147,28 @@ function GameResultContent() {
             }
           } catch (questionError) {
             console.error('Error fetching question result:', questionError);
-            setError('获取题目结果失败');
+            setError('Failed to fetch question result');
           }
         }
       } catch (error) {
         console.error('Error loading results:', error);
-        setError('加载结果失败');
+        setError('Failed to load results');
       } finally {
         setLoading(false);
+        loadingRef.current = false;
       }
     };
 
     loadResults();
-  }, [urlParams, router, fetchGameResult, fetchQuestionResult]);
+  }, [urlParams.gameSessionId, urlParams.questionSessionId, urlParams.status, router, fetchGameResult, fetchQuestionResult]);
 
-  // 处理选择其他题目
+  // Handle selecting other questions
   const handleSelectQuestion = useCallback(async (questionSessionId: string) => {
+    // Avoid duplicate requests
+    if (selectedQuestionResult?.questionSessionId === questionSessionId) {
+      return;
+    }
+    
     try {
       setLoading(true);
       const result = await fetchQuestionResult(questionSessionId);
@@ -165,23 +180,18 @@ function GameResultContent() {
     } finally {
       setLoading(false);
     }
-  }, [fetchQuestionResult]);
+  }, [fetchQuestionResult, selectedQuestionResult?.questionSessionId]);
 
-  // 处理重新开始游戏
-  const handlePlayAgain = useCallback(() => {
-    router.push('/game');
-  }, [router]);
-
-  // 处理继续游戏 - 改进currentRound同步
+  // Handle continue game - improved currentRound synchronization
   const handleContinueGame = useCallback(async () => {
     const { gameSessionId, status, currentRound, totalRounds } = urlParams;
     
-    // 如果游戏未完成，返回游戏页面继续
+    // If game is not completed, return to game page to continue
     if (status === 'submitted' && gameSessionId) {
-      // 尝试从questionResult获取准确的questionNumber
+      // Try to get accurate questionNumber from questionResult
       let nextRound = currentRound ? parseInt(currentRound) + 1 : 2;
       
-      // 如果有questionResult，使用其questionNumber来确定下一轮
+      // If questionResult exists, use its questionNumber to determine next round
       if (currentQuestionResult && currentQuestionResult.questionNumber) {
         nextRound = currentQuestionResult.questionNumber + 1;
         console.log(`Using questionResult.questionNumber: ${currentQuestionResult.questionNumber}, nextRound: ${nextRound}`);
@@ -189,10 +199,10 @@ function GameResultContent() {
         console.log(`Using currentRoundParam: ${currentRound}, nextRound: ${nextRound}`);
       }
       
-      // 检查是否还有下一题
+      // Check if there's a next question
       const totalRoundsNum = totalRounds ? parseInt(totalRounds) : 5;
       if (nextRound > totalRoundsNum) {
-        // 所有题目已完成，开始新游戏
+        // All questions completed, start new game
         console.log('All questions completed, starting new game');
         router.push('/game');
         return;
@@ -203,7 +213,7 @@ function GameResultContent() {
       console.log(`Current round: ${currentRound} -> Next round: ${nextRound}`);
       console.log(`Total rounds: ${totalRoundsNum}`);
       
-      // 使用轮次管理器保存恢复信息
+      // Use round manager to save resume info
       GameRoundManager.saveResumeInfo({
         gameSessionId,
         nextRound,
@@ -211,62 +221,33 @@ function GameResultContent() {
         timestamp: Date.now()
       });
       
-      // 清除当前页面的缓存，确保游戏页面重新加载
+      // Clear current page cache to ensure game page reloads
       if (typeof window !== 'undefined') {
-        // 强制刷新游戏页面的状态
+        // Force refresh game page state
         sessionStorage.setItem('force_reload_game', 'true');
       }
       
-      // 返回游戏页面，传递轮次信息
+      // Return to game page with round info
       const gameUrl = `/game?resume=true&gameSessionId=${gameSessionId}&round=${nextRound}&totalRounds=${totalRoundsNum}&timestamp=${Date.now()}`;
       console.log(`Navigating to: ${gameUrl}`);
       router.push(gameUrl);
     } else {
-      // 否则开始新游戏
+      // Otherwise start new game
       console.log('Starting new game');
       router.push('/game');
     }
   }, [urlParams, currentQuestionResult, router]);
 
-  // 处理分享结果
-  const handleShare = useCallback(() => {
-    if (gameResult) {
-      const shareText = `我在 Time Guessr 中获得了 ${gameResult.totalScore} 分！平均分：${gameResult.averageScore}`;
-      if (navigator.share) {
-        navigator.share({
-          title: 'Time Guessr 游戏结果',
-          text: shareText,
-          url: window.location.href
-        });
-      } else {
-        navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
-        alert('结果已复制到剪贴板！');
-      }
-    } else if (selectedQuestionResult) {
-      const shareText = `我在 Time Guessr 中获得了 ${selectedQuestionResult.scoringDetails.finalScore} 分！等级：${selectedQuestionResult.scoringDetails.rank}`;
-      if (navigator.share) {
-        navigator.share({
-          title: 'Time Guessr 题目结果',
-          text: shareText,
-          url: window.location.href
-        });
-      } else {
-        navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
-        alert('结果已复制到剪贴板！');
-      }
-    }
-  }, [gameResult, selectedQuestionResult]);
-
-  // 计算是否有下一题 - 使用useMemo缓存计算结果
+  // Calculate if there's a next question - use useMemo to cache calculation result
   const hasNextQuestion = useMemo(() => {
     const { currentRound, totalRounds, status } = urlParams;
     
-    // 如果游戏已完成，则没有下一题
+    // If game is completed, there's no next question
     if (status === 'completed') {
       return false;
     }
     
-    // 计算下一轮数
+    // Calculate next round number
     let nextRound = currentRound ? parseInt(currentRound) + 1 : 2;
     if (selectedQuestionResult && selectedQuestionResult.questionNumber) {
       nextRound = selectedQuestionResult.questionNumber + 1;
@@ -274,24 +255,24 @@ function GameResultContent() {
     
     const totalRoundsNum = totalRounds ? parseInt(totalRounds) : 5;
     return nextRound <= totalRoundsNum;
-  }, [urlParams, selectedQuestionResult]);
+  }, [urlParams.status, urlParams.currentRound, urlParams.totalRounds, selectedQuestionResult?.questionNumber]);
 
   if (loading && !selectedQuestionResult) {
-    return <LoadingState message="正在加载结果数据..." />;
+    return <LoadingState message="Loading result data..." />;
   }
 
-  // 如果既没有游戏结果也没有问题结果，显示错误
+  // If there's neither game result nor question result, show error
   if (error && !selectedQuestionResult && !gameResult) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center text-white">
-          <h1 className="text-2xl font-bold mb-4">加载失败</h1>
-          <p className="mb-4">{error || '无法获取结果'}</p>
+          <h1 className="text-2xl font-bold mb-4">Loading Failed</h1>
+          <p className="mb-4">{error || 'Unable to get results'}</p>
           <button
             onClick={() => router.push('/game')}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
           >
-            返回游戏
+            Back to Game
           </button>
         </div>
       </main>
@@ -301,33 +282,33 @@ function GameResultContent() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
-        {/* 游戏总体结果 - 只在游戏完成时显示 */}
+        {/* Game overall result - only show when game is completed */}
         {gameResult && (
           <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-8">
-            <h1 className="text-3xl font-bold text-white mb-6 text-center">游戏结果</h1>
+            <h1 className="text-3xl font-bold text-white mb-6 text-center">Game Results</h1>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-400">{gameResult.totalScore}</div>
-                <div className="text-sm text-gray-300">总分</div>
+                <div className="text-sm text-gray-300">Total Score</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-400">{gameResult.averageScore}</div>
-                <div className="text-sm text-gray-300">平均分</div>
+                <div className="text-sm text-gray-300">Average Score</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-400">{gameResult.questionsCompleted}/{gameResult.totalQuestions}</div>
-                <div className="text-sm text-gray-300">完成度</div>
+                <div className="text-sm text-gray-300">Completion</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-400">{gameResult.gameMode === 'timed' ? '计时' : '不计时'}</div>
-                <div className="text-sm text-gray-300">模式</div>
+                <div className="text-2xl font-bold text-yellow-400">{gameResult.gameMode === 'timed' ? 'Timed' : 'Untimed'}</div>
+                <div className="text-sm text-gray-300">Mode</div>
               </div>
             </div>
           </div>
         )}
 
-        {/* 当前题目详细结果 - 使用新的详细组件 */}
+        {/* Current question detailed result - using new detailed component */}
         {selectedQuestionResult && (
           <QuestionResultDetail 
             questionResult={selectedQuestionResult} 
@@ -336,10 +317,10 @@ function GameResultContent() {
           />
         )}
 
-        {/* 所有题目汇总 - 只在游戏结果加载完成后显示 */}
+        {/* All questions summary - only show after game result is loaded */}
         {gameResult && gameResult.questionSessions.length > 0 && (
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-28 mt-10">
-            <h2 className="text-2xl font-bold text-white mb-6">所有题目汇总</h2>
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-28">
+            <h2 className="text-2xl font-bold text-white mb-6">All Questions Summary</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {gameResult.questionSessions.map((question, index) => (
@@ -353,11 +334,11 @@ function GameResultContent() {
                   }`}
                 >
                   <div className="text-left">
-                    <div className="text-white font-semibold mb-2">题目 {index + 1}</div>
-                    <div className="text-sm text-gray-300 mb-1">分数: {question.finalScore}</div>
-                    <div className="text-sm text-gray-300 mb-1">等级: {question.rank}</div>
+                    <div className="text-white font-semibold mb-2">Question {index + 1}</div>
+                    <div className="text-sm text-gray-300 mb-1">Score: {question.finalScore}</div>
+                    <div className="text-sm text-gray-300 mb-1">Rank: {question.rank}</div>
                     {question.answerTime && (
-                      <div className="text-sm text-gray-300">时间: {question.answerTime}秒</div>
+                      <div className="text-sm text-gray-300">Time: {question.answerTime}s</div>
                     )}
                   </div>
                 </button>
@@ -368,12 +349,12 @@ function GameResultContent() {
       </div>
     </main>
   );
-}
+});
 
-// 主组件，用 Suspense 包装
+// Main component wrapped with Suspense
 export default function GameResultPage() {
   return (
-    <Suspense fallback={<LoadingState message="正在加载页面..." />}>
+    <Suspense fallback={<LoadingState message="Loading page..." />}>
       <GameResultContent />
     </Suspense>
   );

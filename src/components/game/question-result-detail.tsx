@@ -254,7 +254,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
   }, [eventDetails, questionResult, yearDifference, distance]);
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white rounded-2xl overflow-hidden shadow-2xl pb-20">
+    <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white rounded-2xl overflow-hidden shadow-2xl mb-20">
       <div className="p-6">
         {/* Optimized title area - more compact layout */}
         <div className={`relative mb-6 ${fadeInUp}`}>
