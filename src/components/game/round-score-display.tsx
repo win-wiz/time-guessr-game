@@ -73,10 +73,10 @@ export const RoundScoreDisplay = memo(function RoundScoreDisplay({
       </div>
       
       {/* Score 显示 */}
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <span className={styles.roundText}>Score:</span>
         <span className={styles.scoreText}>{totalScore}</span>
-      </div>
+      </div> */}
       
       {/* 进度条 */}
       {showProgress && (

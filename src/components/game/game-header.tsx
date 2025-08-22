@@ -33,9 +33,10 @@ export const GameHeader = memo(function GameHeader({
           </div>
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-              CalgaryGuessr
+              TimeGuessr
             </h1>
-            <div className="text-sm text-blue-200/90">历史时光机</div>
+            {/* 历史时光翻译成英文 */}
+            <div className="text-sm text-blue-200/90">History Time</div>
           </div>
         </div>
         
@@ -47,7 +48,7 @@ export const GameHeader = memo(function GameHeader({
             variant="default"
             showProgress={true}
           />
-          <SimplePreferences onSettingsChange={onSettingsChange} />
+          {/* <SimplePreferences onSettingsChange={onSettingsChange} /> */}
           <ThemeToggle />
         </div>
       </div>

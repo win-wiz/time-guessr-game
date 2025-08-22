@@ -129,7 +129,7 @@ export function GameResultDisplay({
                 <div className="text-6xl font-bold text-white">
                   {animatedScore.toLocaleString()}
                 </div>
-                <div className="text-xl text-gray-300">总得分</div>
+                <div className="text-xl text-gray-300">Total Score</div>
                 {streak > 1 && (
                   <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400">
                     <Zap className="w-4 h-4 mr-1" />
@@ -163,7 +163,7 @@ export function GameResultDisplay({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-5 h-5 text-blue-400" />
-                      <span className="font-semibold text-white">时间猜测</span>
+                      <span className="font-semibold text-white">Time Guess</span>
                     </div>
                     <Badge className={`${timeRank.color} bg-transparent border-current`}>
                       {timeRank.rank}
@@ -172,11 +172,11 @@ export function GameResultDisplay({
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">你的猜测</span>
+                      <span className="text-gray-400">Your Guess</span>
                       <span className="text-white">{guessedYear}年</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">实际年份</span>
+                      <span className="text-gray-400">Actual Year</span>
                       <span className="text-white">{actualYear}年</span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -187,7 +187,7 @@ export function GameResultDisplay({
 
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">得分</span>
+                      <span className="text-gray-400">Score</span>
                       <span className="text-white font-bold">{timeScore}</span>
                     </div>
                     <Progress value={(timeScore / 1000) * 100} className="h-2" />
@@ -203,7 +203,7 @@ export function GameResultDisplay({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <MapPin className="w-5 h-5 text-green-400" />
-                      <span className="font-semibold text-white">位置猜测</span>
+                      <span className="font-semibold text-white">Location Guess</span>
                     </div>
                     <Badge className={`${locationRank.color} bg-transparent border-current`}>
                       {locationRank.rank}
@@ -212,14 +212,14 @@ export function GameResultDisplay({
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">距离差</span>
+                      <span className="text-gray-400">Distance Error</span>
                       <span className="text-white">{formatDistance(distance)}</span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">得分</span>
+                      <span className="text-gray-400">Score</span>
                       <span className="text-white font-bold">{locationScore}</span>
                     </div>
                     <Progress value={(locationScore / 1000) * 100} className="h-2" />

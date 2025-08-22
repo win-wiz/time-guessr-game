@@ -44,8 +44,8 @@ export const GameResultsPage = memo(function GameResultsPage({
             <GameResults
               guessLocation={guessLocation || { lat: 0, lng: 0 }}
               actualLocation={{
-                lat: currentScore?.actualLat || currentEvent.latitude,
-                lng: currentScore?.actualLng || currentEvent.longitude
+                lat: currentScore?.actualLat || currentEvent.latitude || 0,
+                lng: currentScore?.actualLng || currentEvent.longitude || 0
               }}
               score={currentScore?.score || 0}
               distance={currentScore?.distance || 0}
@@ -61,7 +61,7 @@ export const GameResultsPage = memo(function GameResultsPage({
               onClick={onNextRound}
               className="px-12 py-4 bg-gradient-to-r from-blue-600 via-purple-700 to-indigo-800 hover:from-blue-500 hover:via-purple-600 hover:to-indigo-700 text-white text-xl font-bold rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-blue-400/40"
             >
-              {currentRound === totalRounds ? '🏆 查看总结' : '➡️ 下一轮'}
+              {currentRound === totalRounds ? '🏆 View Summary' : '➡️ Next Round'}
             </button>
           </div>
         </div>

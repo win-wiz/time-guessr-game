@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { GameImage } from "@/components/game-image";
 
-// 导入拆分的组件
+// Import split components
 import { BackgroundImage } from "@/components/game/background-image";
 import { GameHeader } from "@/components/game/game-header";
 import { MobileInfoPanel } from "@/components/game/mobile-info-panel";
@@ -15,13 +15,13 @@ import { MapContainer } from "@/components/game/map-container";
 import { GameSummaryPage } from "@/components/game/game-summary-page";
 import { LoadingState } from "@/components/game/loading-state";
 
-// 导入统一的API服务
+// Import unified API service
 import { 
   GameAPIService, 
   EventDetail 
 } from "@/lib/api-service";
 
-// 导入本地存储服务
+// Import local storage service
 import {
   GameProgressManager,
   PlayerSettingsManager,
@@ -30,71 +30,72 @@ import {
   checkStorageSpace
 } from "@/lib/local-storage";
 
-// 导入轮次管理器
+// Import round manager
 import { loadResumeInfo } from "@/lib/game-round-manager";
 
 const currentYear = new Date().getFullYear();
 
-export default function Game() {
+// Memoized Game component for performance optimization
+const Game = React.memo(() => {
   const router = useRouter();
   
-  // 游戏会话状态
+  // Game session state
   const [gameSessionId, setGameSessionId] = useState<string>("");
   const [eventIds, setEventIds] = useState<string[]>([]);
   const [events, setEvents] = useState<EventDetail[]>([]);
   const [questionSessionIds, setQuestionSessionIds] = useState<string[]>([]);
   
-  // 游戏进度状态
+  // Game progress state
   const [currentRound, setCurrentRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(5);
   const [currentEvent, setCurrentEvent] = useState<EventDetail | null>(null);
   
-  // 用户输入状态
+  // User input state
   const [guessLocation, setGuessLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
-  const [selectedYear, setSelectedYear] = useState(2000);
+  const [selectedYear, setSelectedYear] = useState(1950);
   
-  // 游戏状态
+  // Game state
   const [gameState, setGameState] = useState<"loading" | "guessing" | "summary">("loading");
-  const [timeRemaining, setTimeRemaining] = useState(120); // 默认120秒
-  const [timeWarning, setTimeWarning] = useState<boolean>(false); // 时间警告状态
-  const [isTimerStopped, setIsTimerStopped] = useState(false); // 控制计时器是否停止
-  const [submitError, setSubmitError] = useState<string | null>(null); // 提交错误状态
+  const [timeRemaining, setTimeRemaining] = useState(120); // Default 120 seconds
+  const [timeWarning, setTimeWarning] = useState<boolean>(false); // Time warning state
+  const [isTimerStopped, setIsTimerStopped] = useState(false); // Control timer stop state
+  const [submitError, setSubmitError] = useState<string | null>(null); // Submit error state
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 提交中状态
+  const [isSubmitting, setIsSubmitting] = useState(false); // Submitting state
   const [questionStartTime, setQuestionStartTime] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   
-  // 游戏分数（使用本地存储类型）
+  // Game scores (using local storage type)
   const [scores, setScores] = useState<GameScore[]>([]);
   
-  // 本地存储相关状态
+  // Local storage related state
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [hasStoredProgress, setHasStoredProgress] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<number>(0);
 
-  // 清除保存的进度
+  // Clear saved progress
   const clearSavedProgress = useCallback(() => {
     GameProgressManager.clearProgress();
     setHasStoredProgress(false);
   }, []);
 
-  // 网络状态检测
+  // Network status detection
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
   useEffect(() => {
      const handleOnline = () => {
        console.log('[Network] Connection restored');
        setIsOnline(true);
-       // 网络恢复时，如果有错误状态，提示用户重试
-       if (error && error.includes('网络')) {
+       // When network is restored, if there's an error state, prompt user to retry
+       if (error && error.includes('Network')) {
          setError(null);
-         if (confirm('网络连接已恢复，是否重试？')) {
+         if (confirm('Network connection restored. Would you like to retry?')) {
            if (gameState === 'loading') {
-             // 延迟调用initializeGame，避免依赖问题
+             // Delay calling initializeGame to avoid dependency issues
              setTimeout(() => {
                window.location.reload();
              }, 100);
@@ -106,7 +107,7 @@ export default function Game() {
      const handleOffline = () => {
        console.log('[Network] Connection lost');
        setIsOnline(false);
-       setError('网络连接已断开，请检查网络连接');
+       setError('Network connection lost. Please check your connection.');
      };
      
      window.addEventListener('online', handleOnline);
@@ -118,7 +119,7 @@ export default function Game() {
      };
    }, [error, gameState]);
   
-  // 通用重试函数 - 增加网络状态检查
+  // Generic retry function with network status check
   const retryWithBackoff = useCallback(async (
     operation: () => Promise<any>,
     maxRetries: number = 3,
@@ -126,9 +127,9 @@ export default function Game() {
   ) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        // 检查网络状态
+        // Check network status
         if (!navigator.onLine) {
-          throw new Error('网络连接不可用');
+          throw new Error('Network connection unavailable');
         }
         
         console.log(`Attempt ${attempt}/${maxRetries}`);
@@ -137,16 +138,16 @@ export default function Game() {
         console.error(`Attempt ${attempt} failed:`, error);
         
         if (attempt === maxRetries) {
-          // 最后一次重试失败，根据错误类型抛出更具体的错误
+          // Last retry failed, throw more specific error based on error type
           if (error instanceof Error) {
             if (error.message.includes('Failed to fetch') || !navigator.onLine) {
-              throw new Error('网络连接失败，请检查网络后重试');
+              throw new Error('Network connection failed. Please check your network and try again.');
             }
           }
           throw error;
         }
         
-        // 指数退避延迟
+        // Exponential backoff delay
         const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
         console.log(`Retrying in ${Math.round(delay)}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -155,13 +156,13 @@ export default function Game() {
     throw new Error('Max retries exceeded');
   }, []);
 
-  // 加载当前题目 - 按需加载版本（增强错误处理）
+  // Load current question - on-demand loading version with enhanced error handling
   const loadCurrentQuestion = useCallback(async (savedProgress: GameProgress) => {
     try {
       setIsLoading(true);
       console.log(`[LoadQuestion] Starting load for round ${savedProgress.currentRound}`);
       
-      // 检查是否还有题目
+      // Check if there are more questions
       if (savedProgress.currentRound > savedProgress.totalRounds) {
         console.log('[LoadQuestion] All questions completed, going to summary');
         setGameState("summary");
@@ -169,16 +170,16 @@ export default function Game() {
         return;
       }
       
-      // 只加载当前需要的事件，不是所有事件
+      // Only load current needed event, not all events
       const currentEventIndex = savedProgress.currentRound - 1;
       let currentEvent: EventDetail | null = null;
       
-      // 检查是否已有保存的当前事件
+      // Check if current event is already saved
       if (savedProgress.events[currentEventIndex]) {
         currentEvent = savedProgress.events[currentEventIndex];
         console.log(`[LoadQuestion] Using cached event: ${currentEvent!.city} (${currentEvent!.year})`);
       } else {
-        // 按需加载当前事件（带重试机制）
+        // Load current event on-demand with retry mechanism
         const eventId = savedProgress.eventIds[currentEventIndex];
         console.log(`[LoadQuestion] Loading event ${eventId} for round ${savedProgress.currentRound}`);
         
@@ -188,31 +189,31 @@ export default function Game() {
           });
           
           if (!currentEvent) {
-            throw new Error('事件详情为空');
+            throw new Error('Event details are empty');
           }
           
           console.log(`[LoadQuestion] Successfully loaded event: ${currentEvent.city} (${currentEvent.year})`);
         } catch (error) {
           console.error(`[LoadQuestion] Failed to load event ${eventId} after retries:`, error);
-          setError(`加载第${savedProgress.currentRound}题失败，请检查网络连接后重试`);
+          setError(`Failed to load question ${savedProgress.currentRound}. Please check your network connection and try again.`);
           setIsLoading(false);
           return;
         }
       }
       
-      // 检查currentEvent是否为null
+      // Check if currentEvent is null
       if (!currentEvent) {
         console.error('[LoadQuestion] Current event is null after loading');
-        setError('加载题目数据异常');
+        setError('Failed to load question data');
         setIsLoading(false);
         return;
       }
       
-      // 初始化events数组，只设置当前事件
+      // Initialize events array, only set current event
       const eventsArray: EventDetail[] = new Array(savedProgress.eventIds.length);
       eventsArray[currentEventIndex] = currentEvent;
       
-      // 复制已保存的其他事件（如果有的话）
+      // Copy other saved events if any
       savedProgress.events.forEach((event, index) => {
         if (event && index !== currentEventIndex) {
           eventsArray[index] = event;
@@ -222,7 +223,7 @@ export default function Game() {
       setEvents(eventsArray);
       setCurrentEvent(currentEvent);
       
-      // 重置计时器到初始值并启动计时器
+      // Reset timer to initial value and start timer
       const settings = PlayerSettingsManager.loadSettings();
       setTimeRemaining(settings.defaultTimeLimit || 120);
       setIsTimerStopped(false);
@@ -236,12 +237,12 @@ export default function Game() {
       
     } catch (error) {
       console.error('[LoadQuestion] Unexpected error:', error);
-      setError('加载题目时发生未知错误');
+      setError('An unexpected error occurred while loading the question');
       setIsLoading(false);
     }
   }, [retryWithBackoff]);
 
-  // 加载游戏进度
+  // Load game progress
   const loadGameProgress = useCallback(() => {
     const savedProgress = GameProgressManager.loadProgress();
     if (!savedProgress) {
@@ -258,14 +259,14 @@ export default function Game() {
       scoresLength: savedProgress.scores?.length || 0
     });
 
-    // 验证必要的数据
+    // Validate required data
     if (!savedProgress.gameSessionId || !savedProgress.eventIds || savedProgress.eventIds.length === 0) {
       console.error('[LoadProgress] Invalid saved progress data, missing required fields');
       GameProgressManager.clearProgress();
       return false;
     }
 
-    // 恢复完整的游戏状态
+    // Restore complete game state
     setGameSessionId(savedProgress.gameSessionId);
     setCurrentRound(savedProgress.currentRound);
     setTotalRounds(savedProgress.totalRounds);
@@ -283,7 +284,7 @@ export default function Game() {
     return true;
   }, []);
 
-  // 使用useRef存储最新状态，避免useCallback依赖过多导致频繁重新创建
+  // Use useRef to store latest state, avoid frequent recreation due to too many useCallback dependencies
   const gameStateRef = useRef({
     gameSessionId,
     currentRound,
@@ -297,7 +298,7 @@ export default function Game() {
     gameState
   });
 
-  // 更新ref中的状态 - 添加调试日志
+  // Update state in ref - add debug logs
   useEffect(() => {
     const prevState = gameStateRef.current;
     const newState = {
@@ -313,7 +314,7 @@ export default function Game() {
       gameState
     };
     
-    // 简化调试日志
+    // Simplified debug logs
     if (prevState.currentRound !== newState.currentRound) {
       console.log(`Round: ${prevState.currentRound} → ${newState.currentRound}`);
     }
@@ -328,7 +329,7 @@ export default function Game() {
     gameStateRef.current = newState;
   });
 
-  // 保存游戏进度 - 优化依赖，避免循环依赖
+  // Save game progress - optimize dependencies, avoid circular dependencies
   const saveGameProgress = useCallback(() => {
     const state = gameStateRef.current;
     
@@ -368,28 +369,29 @@ export default function Game() {
         timeLimit: 120
       };
 
-      // 使用防抖机制，避免过于频繁的保存
+      // Use debounce mechanism to avoid too frequent saves
       GameProgressManager.saveProgress(progress);
       console.log(`[SaveProgress] Game progress saved successfully: Round ${state.currentRound}, Time remaining: ${state.timeRemaining}s`);
       
-      // 检查存储空间
+      // Check storage space
       const storageInfo = checkStorageSpace();
       if (!storageInfo.hasSpace) {
         console.warn('[SaveProgress] Storage space is running low');
       }
+      
     } catch (error) {
       console.error('[SaveProgress] Failed to save game progress:', error);
     }
-  }, []); // 移除所有依赖，使用ref获取最新状态
+  }, []); // Remove all dependencies, use ref to get latest state
 
-  // 初始化游戏 - 按照文档要求重构
+  // Initialize game - refactored according to documentation requirements
   const initializeGame = useCallback(async () => {
     try {
       setIsLoading(true);
       setGameState("loading");
       setError(null);
       
-      // 检查是否有保存的进度 - 直接检查localStorage，不依赖hasStoredProgress状态
+      // Check for saved progress - directly check localStorage, not dependent on hasStoredProgress state
       const hasProgress = GameProgressManager.hasProgress();
       console.log('[GameInit] Checking for saved progress:', hasProgress);
       
@@ -397,23 +399,23 @@ export default function Game() {
         const loaded = loadGameProgress();
         if (loaded) {
           console.log('[GameInit] Successfully loaded saved progress, skipping new game initialization');
-          return; // 成功加载保存的进度
+          return; // Successfully loaded saved progress
         }
         console.log('[GameInit] Failed to load saved progress, clearing and starting new game');
         GameProgressManager.clearProgress();
       }
       
-      // 加载玩家设置
+      // Load player settings
       const settings = PlayerSettingsManager.loadSettings();
       setAutoSaveEnabled(settings.autoSave);
       
-      // 检查存储空间
+      // Check storage space
       const storageInfo = checkStorageSpace();
       if (!storageInfo.hasSpace) {
-        setError('存储空间不足，某些功能可能无法正常使用');
+        setError('Insufficient storage space, some features may not work properly');
       }
       
-      // 1. 调用 /game/start 获取游戏会话ID、currentRound及游戏 eventIds
+      // 1. Call /game/start to get game session ID, currentRound and game eventIds
       console.log('[GameInit] Starting new game...');
       const gameResponse = await retryWithBackoff(async () => {
         return await GameAPIService.startGame({
@@ -426,25 +428,25 @@ export default function Game() {
       const { gameSessionId, eventIds, currentQuestion, totalQuestions, timeLimit } = gameResponse;
       console.log(`[GameInit] Game started: sessionId=${gameSessionId}, currentRound=${currentQuestion}, totalRounds=${totalQuestions}`);
 
-      // 设置基础游戏状态
+      // Set basic game state
       setGameSessionId(gameSessionId);
       setEventIds(eventIds);
       setCurrentRound(currentQuestion);
       setTotalRounds(totalQuestions);
       setTimeRemaining(timeLimit || settings.defaultTimeLimit);
       setGameStartTime(Date.now());
-      setScores([]); // 初始化分数数组
+      setScores([]); // Initialize scores array
       
-      // 2. 根据 currentRound 获取当前题目 eventId
+      // 2. Get current question eventId based on currentRound
       const currentEventId = eventIds[currentQuestion - 1];
       if (!currentEventId) {
         throw new Error(`No eventId found for round ${currentQuestion}`);
       }
       
-      // 3. 按需加载当前轮次的事件详情
+      // 3. Load event details for current round on demand
       console.log(`[GameInit] Loading event detail for round ${currentQuestion}: ${currentEventId}`);
       
-      // 先检查缓存中是否有该事件
+      // First check if the event is in cache
       let currentEventDetail: EventDetail;
       
       try {
@@ -453,16 +455,16 @@ export default function Game() {
         });
         
         if (!currentEventDetail) {
-          throw new Error('无法加载事件详情');
+          throw new Error('Unable to load event details');
         }
         
         console.log(`[GameInit] Event loaded: ${currentEventDetail.city} (${currentEventDetail.year})`);
       } catch (error) {
         console.error(`[GameInit] Failed to load event ${currentEventId}:`, error);
-        throw new Error(`加载第${currentQuestion}题失败`);
+        throw new Error(`Failed to load question ${currentQuestion}`);
       }
       
-      // 初始化events数组，只设置当前事件
+      // Initialize events array, only set current event
       const initialEvents: EventDetail[] = new Array(eventIds.length);
       initialEvents[currentQuestion - 1] = currentEventDetail;
       
@@ -472,12 +474,12 @@ export default function Game() {
       setGameState("guessing");
       setQuestionStartTime(Date.now());
       
-      // 预加载下一题事件（异步执行，不阻塞当前流程）
+      // Preload next event (async execution, non-blocking)
       setTimeout(() => {
         preloadNextEvent();
       }, 1000);
       
-      // 4. 自动保存初始进度
+      // 4. Auto-save initial progress
       if (settings.autoSave) {
         setTimeout(() => saveGameProgress(), 1000);
       }
@@ -487,57 +489,62 @@ export default function Game() {
     } catch (error) {
       console.error('[GameInit] Initialize game error:', error);
       
-      // 根据错误类型提供更具体的错误信息和处理方案
-      let errorMessage = '游戏初始化失败';
+      // Provide more specific error messages and handling based on error type
+      let errorMessage = 'Game initialization failed';
       let showRetry = true;
       
       if (error instanceof Error) {
         if (error.message.includes('网络') || error.message.includes('Failed to fetch')) {
-          errorMessage = '网络连接失败，请检查网络后重试';
+          errorMessage = 'Network connection failed, please check your network and try again';
         } else if (error.message.includes('事件') || error.message.includes('Event')) {
-          errorMessage = '加载游戏内容失败，请重试';
+          errorMessage = 'Failed to load game content, please try again';
         } else if (error.message.includes('存储') || error.message.includes('Storage')) {
-          errorMessage = '本地存储异常，请清理浏览器缓存后重试';
+          errorMessage = 'Local storage error, please clear browser cache and try again';
           showRetry = false;
         } else {
-          errorMessage = `初始化失败: ${error.message}`;
+          errorMessage = `Initialization failed: ${error.message}`;
         }
       }
       
       setError(errorMessage);
       setIsLoading(false);
       
-      // 根据错误类型决定是否自动重试
+      // Decide whether to auto-retry based on error type
       if (showRetry) {
         setTimeout(() => {
-          if (confirm(`${errorMessage}\n\n是否重试？`)) {
+          if (confirm(`${errorMessage}\n\nWould you like to retry?`)) {
             setError(null);
             setIsLoading(true);
             initializeGame();
           }
-        }, 2000);
+        }, 1950);
       }
     }
-  }, [hasStoredProgress, loadGameProgress, retryWithBackoff]); // 添加retryWithBackoff依赖
+  }, [hasStoredProgress, loadGameProgress, retryWithBackoff]); // Add retryWithBackoff dependency
 
-  // 使用 useCallback 优化事件处理函数 - 优化依赖
+  // Use useCallback to optimize event handlers - optimize dependencies
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (gameState === "guessing") {
       setGuessLocation({ lat, lng });
-      // 自动保存进度
+      // Auto-save progress with optimized timing
       if (autoSaveEnabled) {
-        saveGameProgress();
+        // Use requestIdleCallback for better performance during submission
+        if (typeof requestIdleCallback !== 'undefined') {
+          requestIdleCallback(() => saveGameProgress(), { timeout: 3000 });
+        } else {
+          setTimeout(() => saveGameProgress(), 300);
+        }
       }
     }
-  }, [gameState, autoSaveEnabled]); // 移除saveGameProgress依赖
+  }, [gameState, autoSaveEnabled]); // Remove saveGameProgress dependency
 
   const handleYearChange = useCallback((year: number) => {
     setSelectedYear(year);
-    // 自动保存进度
+    // Auto-save progress
     if (autoSaveEnabled) {
       saveGameProgress();
     }
-  }, [autoSaveEnabled]); // 移除saveGameProgress依赖
+  }, [autoSaveEnabled]); // Remove saveGameProgress dependency
 
   const handleNextRound = useCallback(() => {
     console.log(`=== HANDLE NEXT ROUND ===`);
@@ -548,18 +555,18 @@ export default function Game() {
       const nextRound = currentRound + 1;
       console.log(`Advancing to round ${nextRound}`);
       
-      // 清除当前事件，避免显示错误的事件
+      // Clear current event to avoid displaying wrong event
       setCurrentEvent(null);
       setGuessLocation(null);
-      setSelectedYear(2000);
+      setSelectedYear(1950);
       
-      // 更新轮次，useEffect会处理按需加载下一个事件
+      // Update round, useEffect will handle loading next event on demand
       setCurrentRound(nextRound);
       
-      // 立即更新并保存进度
+      // Immediately update and save progress
       const updatedProgress: GameProgress = {
         gameSessionId,
-        currentRound: nextRound, // 使用新的轮次
+        currentRound: nextRound, // Use new round number
         totalRounds,
         timeRemaining,
         eventIds,
@@ -576,14 +583,14 @@ export default function Game() {
       console.log(`Progress saved with round ${nextRound}`);
       
     } else {
-      // 所有题目完成，跳转到总结页面
+      // All questions completed, go to summary page
       console.log('All rounds completed, going to summary');
       setGameState("summary");
       clearSavedProgress();
     }
   }, [currentRound, totalRounds, eventIds.length, clearSavedProgress, gameSessionId, timeRemaining, eventIds, events, scores, questionSessionIds, gameStartTime]);
 
-  // 统一的错误清理函数
+  // Unified error clearing function
   const clearErrors = useCallback(() => {
     setSubmitError(null);
     setError(null);
@@ -596,7 +603,7 @@ export default function Game() {
     }
 
     try {
-      // 停止计时器
+      // Stop timer
       setIsTimerStopped(true);
       console.log('[SubmitGuess] Timer stopped due to answer submission');
       
@@ -606,10 +613,10 @@ export default function Game() {
       
       console.log(`[SubmitGuess] Submitting answer for round ${currentRound}`);
       
-      // 计算答题时间（秒）
+      // Calculate answer time (seconds)
       const answerTime = questionStartTime > 0 ? Math.floor((Date.now() - questionStartTime) / 1000) : 0;
       
-      // 4. 用户提交答案后，调用 /game/submit 提交答案
+      // 4. After user submits answer, call /game/submit to submit answer
       const submitResponse = await retryWithBackoff(async () => {
         return await GameAPIService.submitAnswer({
           gameSessionId,
@@ -622,14 +629,14 @@ export default function Game() {
 
       console.log(`[SubmitGuess] Answer submitted: questionSessionId=${submitResponse.questionSessionId}, status=${submitResponse.status}`);
 
-      // 保存questionSessionId
+      // Save questionSessionId
       setQuestionSessionIds(prev => [...prev, submitResponse.questionSessionId]);
       
-      // 立即获取结果并更新分数
+      // Immediately get results and update scores
       try {
         const questionResult = await GameAPIService.getQuestionResult(submitResponse.questionSessionId);
         
-        // 构建新的分数对象
+        // Build new score object
         const newScore: GameScore = {
           score: questionResult.scoringDetails.finalScore,
           distance: 0,
@@ -650,7 +657,7 @@ export default function Game() {
           actualLng: questionResult.actualLocation.lng
         };
         
-        // 更新分数状态
+        // Update scores state
         setScores(prev => {
           const updatedScores = [...prev, newScore];
           console.log('[ScoreUpdate] Previous scores:', prev);
@@ -663,34 +670,34 @@ export default function Game() {
         console.error('Failed to fetch question result for immediate score update:', error);
       }
       
-      // 自动保存进度
+      // Auto-save progress
       if (autoSaveEnabled) {
         saveGameProgress();
       }
 
-      // 5. 接口返回后，调用 /game/result/{gameSessionId} 获取游戏结果（在结果页面处理）
-      // 6. 在游戏结果页中，点击继续游戏，返回 game 游戏页面，此时 currentRound 加一
+      // 5. After interface returns, call /game/result/{gameSessionId} to get game results (handled in result page)
+      // 6. In game result page, click continue game, return to game page, currentRound increments by one
       
-      // 检查游戏是否完成
+      // Check if game is completed
       if (submitResponse.status === 'completed') {
         console.log('[SubmitGuess] Game completed, navigating to final results');
-        // 8. 当 currentRound 等于游戏总轮数时，游戏结束
+        // 8. When currentRound equals total game rounds, game ends
         clearSavedProgress();
         
-        // 跳转到最终结果页面
+        // Navigate to final result page
         router.push(`/game/result?gameSessionId=${gameSessionId}&questionSessionId=${submitResponse.questionSessionId}&status=${submitResponse.status}&currentRound=${currentRound}`);
       } else {
         console.log('[SubmitGuess] Round completed, navigating to round results');
-        // 跳转到当前题目结果页面，用户可以选择继续下一题
+        // Navigate to current question result page, user can choose to continue to next question
         router.push(`/game/result?gameSessionId=${gameSessionId}&questionSessionId=${submitResponse.questionSessionId}&status=${submitResponse.status}&currentRound=${currentRound}&totalRounds=${totalRounds}`);
       }
     } catch (error) {
       console.error('[SubmitGuess] Error submitting guess:', error);
-      const errorMessage = error instanceof Error ? error.message : '提交答案失败';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit answer';
       setSubmitError(errorMessage);
       setError(errorMessage);
       
-      // 显示错误信息，让用户选择重试或跳过
+      // Show error message, let user choose to retry or skip
       setTimeout(() => {
         clearErrors();
       }, 5000);
@@ -699,11 +706,11 @@ export default function Game() {
     }
   }, [currentEvent, guessLocation, selectedYear, gameSessionId, questionStartTime, currentRound, totalRounds, router, autoSaveEnabled, retryWithBackoff, clearSavedProgress, clearErrors]);
 
-  // 预加载下一题事件（提升用户体验）
+  // Preload next question event (improve user experience)
   const preloadNextEvent = useCallback(async () => {
     if (!eventIds || currentRound >= totalRounds) return;
     
-    const nextEventId = eventIds[currentRound]; // currentRound是从1开始的，所以下一题的索引是currentRound
+    const nextEventId = eventIds[currentRound]; // currentRound starts from 1, so next question index is currentRound
     if (!nextEventId) return;
     
     try {
@@ -715,25 +722,25 @@ export default function Game() {
     }
   }, [eventIds, currentRound, totalRounds]);
   
-  // 重试提交函数
+  // Retry submit function
   const handleRetrySubmit = useCallback(() => {
     clearErrors();
     handleSubmitGuess();
   }, [clearErrors, handleSubmitGuess]);
 
-  // 跳过当前题目函数
+  // Skip current question function
   const handleSkipQuestion = useCallback(() => {
     clearErrors();
     handleNextRound();
   }, [clearErrors, handleNextRound]);
 
-  // 统一的状态恢复函数
+  // Unified state restoration function
   const restoreGameState = useCallback(async (progress: GameProgress, targetRound?: number) => {
     console.log('Restoring game state:', { progress, targetRound });
     
     const roundToLoad = targetRound || progress.currentRound;
     
-    // 恢复基本状态
+    // Restore basic state
     setGameSessionId(progress.gameSessionId);
     setCurrentRound(roundToLoad);
     setTotalRounds(progress.totalRounds);
@@ -743,10 +750,10 @@ export default function Game() {
     setQuestionSessionIds(progress.questionSessionIds);
     setGameStartTime(progress.startTime);
     
-    // 如果是从结果页面返回，检查是否需要更新分数
+    // If returning from result page, check if scores need to be updated
     let updatedScores = progress.scores;
     if (targetRound && targetRound > progress.currentRound) {
-      // 从结果页面返回，需要获取上一题的结果并更新分数
+      // Returning from result page, need to get previous question result and update scores
       const previousRound = targetRound - 1;
       const previousQuestionSessionId = progress.questionSessionIds[previousRound - 1];
       
@@ -755,10 +762,10 @@ export default function Game() {
           console.log(`Fetching result for previous round ${previousRound}, questionSessionId: ${previousQuestionSessionId}`);
           const questionResult = await GameAPIService.getQuestionResult(previousQuestionSessionId);
           
-          // 构建新的分数对象
+          // Build new score object
           const newScore: GameScore = {
             score: questionResult.scoringDetails.finalScore,
-            distance: 0, // 这些字段在当前实现中可能不需要，但接口要求
+            distance: 0, // These fields may not be needed in current implementation, but required by interface
             yearDifference: Math.abs(questionResult.guessedYear - questionResult.actualYear),
             event: {
               id: parseInt(questionResult.eventId),
@@ -786,14 +793,14 @@ export default function Game() {
     
     setScores(updatedScores);
     
-    // 检查游戏是否完成
+    // Check if game is completed
     if (roundToLoad > progress.totalRounds) {
       setGameState("summary");
       setIsLoading(false);
       return;
     }
     
-    // 加载当前轮次的事件
+    // Load current round event
     try {
       setIsLoading(true);
       const eventIndex = roundToLoad - 1;
@@ -806,13 +813,13 @@ export default function Game() {
       const eventDetail = await GameAPIService.getEventDetail(eventId);
       console.log(`Loaded event for round ${roundToLoad}: ${eventDetail.city} (${eventDetail.year})`);
       
-      // 更新当前事件
+      // Update current event
       setCurrentEvent(eventDetail);
       setGuessLocation(null);
-      setSelectedYear(2000);
+      setSelectedYear(1950);
       setQuestionStartTime(Date.now());
       
-      // 重置计时器到初始值并启动计时器
+      // Reset timer to initial value and start timer
       const settings = PlayerSettingsManager.loadSettings();
       setTimeRemaining(settings.defaultTimeLimit || 120);
       setIsTimerStopped(false);
@@ -822,22 +829,22 @@ export default function Game() {
       setGameState("guessing");
       setIsLoading(false);
       
-      // 保存更新后的进度
+      // Save updated progress
       const updatedProgress = { ...progress, currentRound: roundToLoad, scores: updatedScores };
       GameProgressManager.saveProgress(updatedProgress);
       
     } catch (error) {
       console.error(`Error loading event for round ${roundToLoad}:`, error);
-      setError(`加载第${roundToLoad}题失败`);
+      setError(`Failed to load question ${roundToLoad}`);
       setIsLoading(false);
     }
   }, []);
 
   const handlePlayAgain = useCallback(() => {
-    // 清除保存的进度
+    // Clear saved progress
     clearSavedProgress();
     
-    // 重置所有状态
+    // Reset all states
     setGameSessionId("");
     setEventIds([]);
     setEvents([]);
@@ -845,14 +852,14 @@ export default function Game() {
     setCurrentRound(1);
     setScores([]);
     setGuessLocation(null);
-    setSelectedYear(2000);
+    setSelectedYear(1950);
     setGameState("loading");
     setIsLoading(true);
     setQuestionStartTime(0);
     setGameStartTime(0);
     setError(null);
     
-    // 重新开始游戏
+    // Restart game
     initializeGame();
   }, [clearSavedProgress, initializeGame]);
 
@@ -860,33 +867,33 @@ export default function Game() {
     setIsMapExpanded(prev => !prev);
   }, []);
 
-  // 使用 useMemo 优化计算值
+  // Use useMemo to optimize calculated values
   const totalScore = useMemo(() => 
     scores.reduce((sum, round) => sum + round.score, 0), 
     [scores]
   );
 
-  // 页面初始化 - 检查并恢复保存的游戏状态
+  // Page initialization - check and restore saved game state
   useEffect(() => {
     const initializePage = async () => {
       try {
         console.log('[PageInit] Starting page initialization');
         
-        // 检查是否需要强制重新加载
+        // Check if force reload is needed
         const forceReload = sessionStorage.getItem('force_reload_game');
         if (forceReload) {
           sessionStorage.removeItem('force_reload_game');
           console.log('[PageInit] Force reload detected, clearing cache');
         }
         
-        // 首先检查是否从结果页面返回
+        // First check if returning from result page
         const urlParams = new URLSearchParams(window.location.search);
         const resumeFlag = urlParams.get('resume');
         const gameSessionIdParam = urlParams.get('gameSessionId');
         const roundParam = urlParams.get('round');
         const totalRoundsParam = urlParams.get('totalRounds');
         
-        // 使用轮次管理器检查恢复信息
+        // Use round manager to check resume info
         const resumeInfo = loadResumeInfo();
         
         console.log(`=== GAME PAGE INITIALIZATION ===`);
@@ -894,7 +901,7 @@ export default function Game() {
         console.log(`URL params - gameSessionId: ${gameSessionIdParam}, round: ${roundParam}, totalRounds: ${totalRoundsParam}`);
         console.log(`Resume info:`, resumeInfo);
         
-        // 如果是从结果页面返回，优先使用恢复信息
+        // If returning from result page, prioritize using resume info
         if (resumeFlag === 'true' && (resumeInfo || (gameSessionIdParam && roundParam))) {
           const targetGameSessionId = resumeInfo?.gameSessionId || gameSessionIdParam;
           const targetRound = resumeInfo?.nextRound || parseInt(roundParam || '1');
@@ -903,19 +910,19 @@ export default function Game() {
           console.log(`=== RESUMING GAME FROM RESULT PAGE ===`);
           console.log(`Target sessionId: ${targetGameSessionId}, Target round: ${targetRound}, Total rounds: ${targetTotalRounds}`);
           
-          // 检查是否有匹配的保存进度
+          // Check if there's matching saved progress
           const savedProgress = GameProgressManager.loadProgress();
           if (savedProgress && savedProgress.gameSessionId === targetGameSessionId) {
             console.log(`Found matching saved progress, updating round from ${savedProgress.currentRound} to ${targetRound}`);
             
-            // 更新轮次信息
+            // Update round info
             const updatedProgress = {
               ...savedProgress,
               currentRound: targetRound,
               totalRounds: targetTotalRounds
             };
             
-            // 使用统一的恢复函数
+            // Use unified restoration function
             await restoreGameState(updatedProgress, targetRound);
             return;
           } else {
@@ -928,10 +935,10 @@ export default function Game() {
         console.log('[PageInit] Checking localStorage progress:', hasProgress);
         setHasStoredProgress(hasProgress);
         
-        // 加载玩家设置
+        // Load player settings
         const settings = PlayerSettingsManager.loadSettings();
         setAutoSaveEnabled(settings.autoSave);
-        setSelectedYear(2000); // 重置为默认值
+        setSelectedYear(1950); // 重置为默认值
         
         if (hasProgress) {
           console.log('[PageInit] Found saved progress, attempting to restore');
@@ -949,26 +956,31 @@ export default function Game() {
         }
       } catch (error) {
         console.error('[PageInit] Page initialization failed:', error);
-        setError('页面初始化失败，请刷新重试');
+        setError('Page initialization failed, please refresh and retry');
         setIsLoading(false);
       }
     };
     
     initializePage();
-   }, [initializeGame, loadGameProgress]); // 添加必要的依赖
+   }, [initializeGame, loadGameProgress]); // Add necessary dependencies
 
-  // 自动保存进度（每30秒）- 优化依赖
+  // Auto-save progress - optimize with longer intervals and idle callback
   useEffect(() => {
     if (!autoSaveEnabled || gameState !== "guessing") return;
 
     const autoSaveInterval = setInterval(() => {
-      saveGameProgress();
-    }, 30000); // 30秒自动保存
+      // Use requestIdleCallback for better performance when available
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => saveGameProgress(), { timeout: 5000 });
+      } else {
+        saveGameProgress();
+      }
+    }, 45000); // Increase interval to 45 seconds for better performance
 
     return () => clearInterval(autoSaveInterval);
-  }, [autoSaveEnabled, gameState]); // 移除saveGameProgress依赖
+  }, [autoSaveEnabled, gameState]); // Remove saveGameProgress dependency
 
-  // 页面卸载时保存进度 - 优化依赖
+  // Save progress when page unloads - optimize dependencies
   useEffect(() => {
     const handleBeforeUnload = () => {
       const state = gameStateRef.current;
@@ -994,9 +1006,9 @@ export default function Game() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []); // 移除所有依赖，使用ref获取状态
+  }, []); // Remove all dependencies, use ref to get state
 
-  // 为当前轮次加载事件详情 - 按需加载版本（增强错误处理）
+  // Load event details for current round - on-demand loading version (enhanced error handling)
   const loadEventForCurrentRound = useCallback(async () => {
     const state = gameStateRef.current;
     if (!state.eventIds.length || state.currentRound <= 0 || state.currentRound > state.eventIds.length) {
@@ -1009,7 +1021,7 @@ export default function Game() {
       const eventId = state.eventIds[state.currentRound - 1];
       console.log(`[LoadEvent] Starting load for round ${state.currentRound}, eventId: ${eventId}`);
       
-      // 使用重试机制从API获取事件数据
+      // Use retry mechanism to get event data from API
       const eventDetail = await retryWithBackoff(async () => {
         return await GameAPIService.getEventDetail(eventId);
       });
@@ -1026,7 +1038,7 @@ export default function Game() {
       // 直接设置当前事件
       setCurrentEvent(eventDetail);
       setGuessLocation(null);
-      setSelectedYear(2000);
+      setSelectedYear(1950);
       setQuestionStartTime(Date.now());
       
       // 重置计时器到初始值并启动计时器
@@ -1039,24 +1051,32 @@ export default function Game() {
       setGameState("guessing");
       setIsLoading(false);
       
-      // 保存更新后的进度
+      // Save updated progress with optimized timing
       if (autoSaveEnabled) {
-        setTimeout(() => {
-          console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
-          saveGameProgress();
-        }, 1000);
+        // Use requestIdleCallback for better performance, fallback to shorter timeout
+        if (typeof requestIdleCallback !== 'undefined') {
+          requestIdleCallback(() => {
+            console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
+            saveGameProgress();
+          }, { timeout: 1950 });
+        } else {
+          setTimeout(() => {
+            console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
+            saveGameProgress();
+          }, 500);
+        }
       }
       
       console.log(`[LoadEvent] Successfully completed loading round ${state.currentRound}`);
       
     } catch (error) {
       console.error(`[LoadEvent] Failed to load event for round ${state.currentRound} after retries:`, error);
-      setError(`加载第${state.currentRound}题失败，请检查网络连接后重试`);
+      setError(`Failed to load question ${state.currentRound}, please check network connection and retry`);
       setIsLoading(false);
     }
   }, [autoSaveEnabled, retryWithBackoff]); // 大幅简化依赖项
 
-  // 优化的题目切换逻辑 - 按需加载事件，优化依赖
+  // Optimized question switching logic - load events on demand, optimize dependencies
   useEffect(() => {
     if (gameState === "guessing" && !isLoading && eventIds.length > 0) {
       // 检查当前轮次是否有效
@@ -1071,7 +1091,7 @@ export default function Game() {
           
           setCurrentEvent(event);
           setGuessLocation(null);
-          setSelectedYear(2000);
+          setSelectedYear(1950);
           setQuestionStartTime(Date.now());
           
           // 重置计时器到初始值并启动计时器
@@ -1090,7 +1110,7 @@ export default function Game() {
             return () => clearTimeout(timer);
           }
         } else {
-          // 事件未加载，强制按需加载
+          // Event not loaded, force on-demand loading
           console.log(`Event not loaded for round ${currentRound}, force loading...`);
           loadEventForCurrentRound();
         }
@@ -1104,22 +1124,27 @@ export default function Game() {
       const timer = setTimeout(() => {
         setTimeRemaining(prev => {
           const newTime = prev - 1;
-          // 只在特定时间点保存进度，避免频繁写入
-          if (autoSaveEnabled && (newTime % 10 === 0 || newTime <= 10)) {
-            // 每10秒保存一次，或者最后10秒每秒保存
-            setTimeout(() => saveGameProgress(), 100);
+          // Batch state updates and reduce save frequency for better performance
+          if (autoSaveEnabled && (newTime % 15 === 0 || newTime <= 5)) {
+            // Save every 15 seconds, or every second in the last 5 seconds
+            // Use requestIdleCallback for better performance when available
+            if (typeof requestIdleCallback !== 'undefined') {
+              requestIdleCallback(() => saveGameProgress(), { timeout: 1000 });
+            } else {
+              setTimeout(() => saveGameProgress(), 200);
+            }
           }
           return newTime;
         });
       }, 1000);
       return () => clearTimeout(timer);
     } else if (gameState === "guessing" && timeRemaining === 0 && !isTimerStopped) {
-      // 时间到时显示警告，不自动提交
+      // Show warning when time is up, don't auto-submit
       setTimeWarning(true);
     }
   }, [timeRemaining, gameState, autoSaveEnabled, isTimerStopped]); // 添加isTimerStopped依赖
 
-  // 如果正在加载，显示加载状态
+  // If loading, show loading state
   if (gameState === "loading" || isLoading) {
     return (
       <LoadingState 
@@ -1132,7 +1157,7 @@ export default function Game() {
 
   return (
     <main className="h-screen bg-black text-white flex flex-col relative overflow-hidden">
-      {/* 错误提示 */}
+      {/* Error message */}
       {error && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-4 py-2 rounded-lg">
           {error}
@@ -1148,7 +1173,7 @@ export default function Game() {
         totalRounds={totalRounds}
         scores={scores}
         onSettingsChange={() => {
-          // 重新加载设置
+          // Reload settings
           const newSettings = PlayerSettingsManager.loadSettings();
           setAutoSaveEnabled(newSettings.autoSave);
           // 可以在这里添加其他设置变更的处理逻辑
@@ -1166,7 +1191,7 @@ export default function Game() {
             />
           </div>
 
-          {/* 移动端信息面板 */}
+          {/* Mobile info panel */}
           <MobileInfoPanel
             eventName={currentEvent.description || ''}
             currentRound={currentRound}
@@ -1185,7 +1210,7 @@ export default function Game() {
             totalRounds={totalRounds}
           />
 
-          {/* 桌面端状态面板 */}
+          {/* Desktop status panel */}
           <DesktopStatusPanel
             timeRemaining={timeRemaining}
             selectedYear={selectedYear}
@@ -1194,15 +1219,15 @@ export default function Game() {
             currentYear={currentYear}
           />
 
-          {/* 移动端底部提交按钮 */}
+          {/* Mobile bottom submit button */}
           <div className="md:hidden absolute bottom-4 left-4 right-4 z-40 pointer-events-auto">
-            {/* 时间警告提示 */}
+            {/* Time warning alert */}
             {timeWarning && (
               <div className="mb-2 p-3 bg-red-500 text-white rounded-lg text-center font-medium">
-                ⏰ 时间已到！请尽快提交您的答案
+                ⏰ Time's up! Please submit your answer as soon as possible
               </div>
             )}
-            {/* 提交错误处理选项 */}
+            {/* Submit error handling options */}
             {submitError && (
               <div className="mb-2 p-3 bg-red-100 border border-red-300 rounded-lg">
                 <div className="text-red-700 text-center font-medium mb-2">
@@ -1213,13 +1238,13 @@ export default function Game() {
                     onClick={handleRetrySubmit}
                     className="flex-1 px-3 py-2 bg-blue-500 text-white rounded font-medium hover:bg-blue-600"
                   >
-                    🔄 重试提交
+                    🔄 Retry Submit
                   </button>
                   <button
                     onClick={handleSkipQuestion}
                     className="flex-1 px-3 py-2 bg-gray-500 text-white rounded font-medium hover:bg-gray-600"
                   >
-                    ⏭️ 跳过题目
+                    ⏭️ Skip Question
                   </button>
                 </div>
               </div>
@@ -1232,17 +1257,17 @@ export default function Game() {
             />
           </div>
 
-          {/* 地图容器和桌面端提交按钮的组合容器 */}
+          {/* Combined container for map and desktop submit button */}
           <div className="absolute bottom-20 md:bottom-4 left-4 right-4 z-30 pointer-events-auto">
-            {/* 桌面端提交按钮 - 位于地图上方 */}
+            {/* Desktop submit button - positioned above map */}
             <div className="hidden md:flex flex-col items-center z-50 pointer-events-auto relative -bottom-6">
-              {/* 时间警告提示 */}
+              {/* Time warning alert */}
               {timeWarning && (
                 <div className="mb-2 p-3 bg-red-500 text-white rounded-lg text-center font-medium">
-                  ⏰ 时间已到！请尽快提交您的答案
+                  ⏰ Time's up! Please submit your answer as soon as possible
                 </div>
               )}
-              {/* 提交错误处理选项 */}
+              {/* Submit error handling options */}
               {submitError && (
                 <div className="mb-2 p-3 bg-red-100 border border-red-300 rounded-lg">
                   <div className="text-red-700 text-center font-medium mb-2">
@@ -1253,13 +1278,13 @@ export default function Game() {
                       onClick={handleRetrySubmit}
                       className="flex-1 px-3 py-2 bg-blue-500 text-white rounded font-medium hover:bg-blue-600"
                     >
-                      🔄 重试提交
+                      🔄 Retry Submit
                     </button>
                     <button
                       onClick={handleSkipQuestion}
                       className="flex-1 px-3 py-2 bg-gray-500 text-white rounded font-medium hover:bg-gray-600"
                     >
-                      ⏭️ 跳过题目
+                      ⏭️ Skip Question
                     </button>
                   </div>
                 </div>
@@ -1271,7 +1296,7 @@ export default function Game() {
               />
             </div>
             
-            {/* 地图容器 */}
+            {/* Map container */}
             <MapContainer
               onMapClick={handleMapClick}
               guessLocation={guessLocation}
@@ -1292,4 +1317,6 @@ export default function Game() {
       )}
     </main>
   );
-}
+});
+
+export default Game;

@@ -67,7 +67,7 @@ export const GameSummaryPage = memo(function GameSummaryPage({
                   
                   <div className="p-6 grid grid-cols-2 gap-6">
                     <div className="bg-white/5 p-6 rounded-2xl text-center">
-                      <div className="text-gray-300 mb-3">📍 距离误差</div>
+                      <div className="text-gray-300 mb-3">📍 Distance Error</div>
                       <div className="text-2xl font-bold text-white mb-2">
                         {round.distance.toFixed(1)} km
                       </div>
@@ -83,7 +83,7 @@ export const GameSummaryPage = memo(function GameSummaryPage({
                     </div>
                     
                     <div className="bg-white/5 p-6 rounded-2xl text-center">
-                      <div className="text-gray-300 mb-3">📅 年份误差</div>
+                      <div className="text-gray-300 mb-3">📅 Year Error</div>
                       <div className="text-2xl font-bold text-white mb-2">
                         {round.yearDifference} 年
                       </div>

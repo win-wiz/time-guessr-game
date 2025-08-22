@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, memo } from "react";
 import {
   useJsApiLoader,
   GoogleMap,
@@ -69,7 +69,7 @@ const createActualMarkerIcon = () => ({
   anchor: new google.maps.Point(16, 16),
 });
 
-export function GameMap({
+export const GameMap = memo(function GameMap({
   onMapClick,
   guessLocation,
   actualLocation,
@@ -187,4 +187,4 @@ export function GameMap({
       </GoogleMap>
     </div>
   );
-}
+});

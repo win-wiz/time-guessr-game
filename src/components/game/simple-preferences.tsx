@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { 
@@ -17,7 +17,7 @@ interface SimplePreferencesProps {
   onSettingsChange?: () => void;
 }
 
-export function SimplePreferences({ onSettingsChange }: SimplePreferencesProps) {
+export const SimplePreferences = memo(function SimplePreferences({ onSettingsChange }: SimplePreferencesProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [preferences, setPreferences] = useState(UserPreferencesManager.loadPreferences());
 
@@ -33,13 +33,13 @@ export function SimplePreferences({ onSettingsChange }: SimplePreferencesProps) 
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Settings className="w-4 h-4 mr-2" />
-          设置
+          Settings
         </Button>
       </DialogTrigger>
       
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>游戏设置</DialogTitle>
+          <DialogTitle>Game Settings</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -79,4 +79,4 @@ export function SimplePreferences({ onSettingsChange }: SimplePreferencesProps) 
       </DialogContent>
     </Dialog>
   );
-}
+});

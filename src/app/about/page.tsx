@@ -21,7 +21,7 @@ export default function About() {
         <div className="flex items-center gap-2 mb-6">
           <MapPin className="h-8 w-8 text-[#CF142B]" />
           <h1 className="text-3xl font-bold dark:text-white light:text-[#00205B]">
-            About CalgaryGuessr
+            About TimeGuessr
           </h1>
         </div>
 
@@ -32,7 +32,7 @@ export default function About() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
-                CalgaryGuessr is a game that tests your knowledge of Calgary's
+                TimeGuessr is a game that tests your knowledge of Calgary's
                 streets and neighborhoods. You'll be shown images from around
                 the city, and your task is to guess where the photo was taken.
               </p>

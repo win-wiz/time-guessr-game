@@ -4,8 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "CalgaryGuessr",
-  description: "Test your knowledge of Calgary streets",
+  title: "TimeGuessr",
+  description: "Test your knowledge of Guess streets",
 };
 
 export default function RootLayout({

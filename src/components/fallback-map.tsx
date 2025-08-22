@@ -80,7 +80,7 @@ export function FallbackMap({
             }}
           >
             <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg"></div>
-            <div className="text-xs text-red-600 mt-1 whitespace-nowrap font-bold">你的猜测</div>
+            <div className="text-xs text-red-600 mt-1 whitespace-nowrap font-bold">Your Guess</div>
           </div>
         )}
 
@@ -94,7 +94,7 @@ export function FallbackMap({
             }}
           >
             <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
-            <div className="text-xs text-green-600 mt-1 whitespace-nowrap font-bold">实际位置</div>
+            <div className="text-xs text-green-600 mt-1 whitespace-nowrap font-bold">Actual Location</div>
           </div>
         )}
 
@@ -117,7 +117,7 @@ export function FallbackMap({
         {/* 提示文字 */}
         {isGuessing && (
           <div className="absolute top-4 left-4 bg-white/90 px-3 py-2 rounded-lg shadow-lg">
-            <p className="text-sm text-gray-700">点击地图进行猜测</p>
+            <p className="text-sm text-gray-700">Click on the map to make a guess</p>
           </div>
         )}
       </div>

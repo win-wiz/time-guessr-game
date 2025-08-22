@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Target } from "lucide-react";
 
 interface GameHintProps {
@@ -14,6 +14,12 @@ export const GameHint = memo(function GameHint({
   currentRound,
   totalRounds
 }: GameHintProps) {
+  // Memoize the hint text to prevent unnecessary re-renders
+  const hintText = useMemo(() => 
+    `Observe details to deduce event location and time • Round ${currentRound}/${totalRounds}`,
+    [currentRound, totalRounds]
+  );
+
   return (
     <div className="hidden md:block absolute top-6 left-6 z-30">
       <div className="bg-gradient-to-br from-slate-900/80 via-gray-800/70 to-slate-900/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-xl max-w-sm">
@@ -23,7 +29,9 @@ export const GameHint = memo(function GameHint({
           </div>
           <div>
             <div className="text-sm font-bold text-white">{eventName}</div>
-            <div className="text-xs text-blue-200/80">观察细节推测地点和时间 • 第 {currentRound}/{totalRounds} 轮</div>
+            <div className="text-xs text-blue-200/80">
+              {hintText}
+            </div>
           </div>
         </div>
       </div>

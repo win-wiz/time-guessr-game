@@ -43,7 +43,7 @@ export const SubmitButton = memo(function SubmitButton({
         ) : (
           <Zap className="w-5 h-5" />
         )}
-        {isLoading ? '提交中...' : guessLocation ? '🎯 提交猜测' : '请先在地图上选择位置'}
+        {isLoading ? 'Submitting...' : guessLocation ? '🎯 Submit Guess' : 'Please select a location on the map first'}
       </div>
       {guessLocation && !isMobile && !isLoading && (
         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400/20 via-purple-500/20 to-indigo-600/20 animate-pulse"></div>
