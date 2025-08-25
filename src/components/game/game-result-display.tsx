@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,33 +41,33 @@ interface GameResultDisplayProps {
   achievements?: string[];
 }
 
-// 评分等级判断函数
-function getTimeRank(yearDiff: number): { rank: string; color: string } {
-  if (yearDiff === 0) return { rank: "完美", color: "text-yellow-400" };
-  if (yearDiff <= 1) return { rank: "优秀", color: "text-green-400" };
-  if (yearDiff <= 3) return { rank: "很好", color: "text-blue-400" };
-  if (yearDiff <= 5) return { rank: "良好", color: "text-purple-400" };
-  if (yearDiff <= 10) return { rank: "一般", color: "text-orange-400" };
-  if (yearDiff <= 20) return { rank: "较差", color: "text-red-400" };
-  return { rank: "很差", color: "text-gray-400" };
-}
+// Rating level judgment functions - moved outside component for better performance
+const getTimeRank = (yearDiff: number): { rank: string; color: string } => {
+  if (yearDiff === 0) return { rank: "Perfect", color: "text-yellow-400" };
+  if (yearDiff <= 1) return { rank: "Excellent", color: "text-green-400" };
+  if (yearDiff <= 3) return { rank: "Very Good", color: "text-blue-400" };
+  if (yearDiff <= 5) return { rank: "Good", color: "text-purple-400" };
+  if (yearDiff <= 10) return { rank: "Average", color: "text-orange-400" };
+  if (yearDiff <= 20) return { rank: "Poor", color: "text-red-400" };
+  return { rank: "Very Poor", color: "text-gray-400" };
+};
 
-function getLocationRank(distance: number): { rank: string; color: string } {
-  if (distance <= 0.1) return { rank: "完美", color: "text-yellow-400" };
-  if (distance <= 1) return { rank: "优秀", color: "text-green-400" };
-  if (distance <= 5) return { rank: "很好", color: "text-blue-400" };
-  if (distance <= 25) return { rank: "良好", color: "text-purple-400" };
-  if (distance <= 100) return { rank: "一般", color: "text-orange-400" };
-  if (distance <= 500) return { rank: "较差", color: "text-red-400" };
-  return { rank: "很差", color: "text-gray-400" };
-}
+const getLocationRank = (distance: number): { rank: string; color: string } => {
+  if (distance <= 0.1) return { rank: "Perfect", color: "text-yellow-400" };
+  if (distance <= 1) return { rank: "Excellent", color: "text-green-400" };
+  if (distance <= 5) return { rank: "Very Good", color: "text-blue-400" };
+  if (distance <= 25) return { rank: "Good", color: "text-purple-400" };
+  if (distance <= 100) return { rank: "Average", color: "text-orange-400" };
+  if (distance <= 500) return { rank: "Poor", color: "text-red-400" };
+  return { rank: "Very Poor", color: "text-gray-400" };
+};
 
-function formatDistance(distance: number): string {
+const formatDistance = (distance: number): string => {
   if (distance < 1) {
-    return `${Math.round(distance * 1000)}米`;
+    return `${Math.round(distance * 1000)}m`;
   }
-  return `${distance.toFixed(1)}公里`;
-}
+  return `${distance.toFixed(1)}km`;
+};
 
 export function GameResultDisplay({
   currentEvent,
@@ -89,10 +89,11 @@ export function GameResultDisplay({
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
 
-  const timeRank = getTimeRank(yearDifference);
-  const locationRank = getLocationRank(distance);
+  // Memoized calculations for better performance
+  const timeRank = useMemo(() => getTimeRank(yearDifference), [yearDifference]);
+  const locationRank = useMemo(() => getLocationRank(distance), [distance]);
 
-  // 分数动画效果
+  // Score animation effect
   useEffect(() => {
     const timer = setTimeout(() => {
       setAnimatedScore(finalScore);
@@ -101,30 +102,31 @@ export function GameResultDisplay({
     return () => clearTimeout(timer);
   }, [finalScore]);
 
-  const handleNextRound = () => {
+  // Optimized event handlers with useCallback
+  const handleNextRound = useCallback(() => {
     router.push('/game');
-  };
+  }, [router]);
 
-  const handleViewSummary = () => {
+  const handleViewSummary = useCallback(() => {
     router.push('/game/summary');
-  };
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-4xl space-y-6">
-        {/* 头部信息 */}
+        {/* Header information */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-white">
-            第 {currentRound} 轮结果
+            Round {currentRound} Results
           </h1>
           <p className="text-gray-300">{currentEvent.event_name}</p>
         </div>
 
-        {/* 主要得分卡片 */}
+        {/* Main score card */}
         <Card className="bg-black/50 border-gray-700 backdrop-blur-sm">
           <CardContent className="p-8">
             <div className="text-center space-y-6">
-              {/* 总分显示 */}
+              {/* Total score display */}
               <div className="space-y-2">
                 <div className="text-6xl font-bold text-white">
                   {animatedScore.toLocaleString()}
@@ -133,12 +135,12 @@ export function GameResultDisplay({
                 {streak > 1 && (
                   <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400">
                     <Zap className="w-4 h-4 mr-1" />
-                    {streak} 连击
+                    {streak} Streak
                   </Badge>
                 )}
               </div>
 
-              {/* 成就展示 */}
+              {/* Achievement display */}
               {achievements.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-2">
                   {achievements.map((achievement, index) => (
@@ -153,10 +155,10 @@ export function GameResultDisplay({
           </CardContent>
         </Card>
 
-        {/* 详细分数分解 */}
+        {/* Detailed score breakdown */}
         {showDetails && (
           <div className="grid md:grid-cols-2 gap-6">
-            {/* 时间维度 */}
+            {/* Time dimension */}
             <Card className="bg-black/50 border-gray-700 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="space-y-4">
@@ -173,15 +175,15 @@ export function GameResultDisplay({
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-400">Your Guess</span>
-                      <span className="text-white">{guessedYear}年</span>
+                      <span className="text-white">{guessedYear}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-400">Actual Year</span>
-                      <span className="text-white">{actualYear}年</span>
+                      <span className="text-white">{actualYear}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">差距</span>
-                      <span className="text-white">{yearDifference}年</span>
+                      <span className="text-gray-400">Difference</span>
+                      <span className="text-white">{yearDifference} years</span>
                     </div>
                   </div>
 
@@ -196,7 +198,7 @@ export function GameResultDisplay({
               </CardContent>
             </Card>
 
-            {/* 地理维度 */}
+            {/* Geographic dimension */}
             <Card className="bg-black/50 border-gray-700 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="space-y-4">
@@ -230,40 +232,40 @@ export function GameResultDisplay({
           </div>
         )}
 
-        {/* 奖励分数 */}
+        {/* Bonus score */}
         {showDetails && bonusScore > 0 && (
           <Card className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-400/50 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Star className="w-5 h-5 text-yellow-400" />
-                  <span className="font-semibold text-white">奖励分数</span>
+                  <span className="font-semibold text-white">Bonus Score</span>
                 </div>
                 <span className="text-2xl font-bold text-yellow-400">+{bonusScore}</span>
               </div>
               <div className="mt-2 text-sm text-gray-300">
-                包含速度奖励、连击奖励等
+                Includes speed bonus, streak bonus, and accuracy bonus
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* 答题时间 */}
+        {/* Answer time */}
         {showDetails && (
           <Card className="bg-black/50 border-gray-700 backdrop-blur-sm">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-400">答题用时</span>
+                  <span className="text-gray-400">Answer Time</span>
                 </div>
-                <span className="text-white">{answerTime}秒</span>
+                <span className="text-white">{answerTime}s</span>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* 操作按钮 */}
+        {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {currentRound < totalRounds ? (
             <Button 
@@ -271,7 +273,7 @@ export function GameResultDisplay({
               size="lg"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8"
             >
-              下一题
+              Next Question
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
@@ -280,7 +282,7 @@ export function GameResultDisplay({
               size="lg"
               className="bg-green-600 hover:bg-green-700 text-white px-8"
             >
-              查看总结
+              View Summary
               <TrendingUp className="w-4 h-4 ml-2" />
             </Button>
           )}

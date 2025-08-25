@@ -1,8 +1,7 @@
 "use client";
 
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-// import Image from "next/image";
 import { MapPin, Calendar, Award, Navigation, Share2 } from "lucide-react";
 import { GameMap } from "@/components/game-map";
 import { GameImage } from "../game-image";
@@ -10,12 +9,14 @@ import { ShareDialog } from "@/components/ui/share-dialog";
 import { GameAPIService, StartGameRequest } from "@/lib/api-service";
 import { GameProgressManager, PlayerSettingsManager } from "@/lib/local-storage";
 
-// Animation styles
-const fadeInUp = "animate-[fadeInUp_0.6s_ease-out_forwards]";
-const slideInLeft = "animate-[slideInLeft_0.8s_ease-out_forwards]";
-const slideInRight = "animate-[slideInRight_0.8s_ease-out_forwards]";
-const scaleIn = "animate-[scaleIn_0.5s_ease-out_forwards]";
-const bounceIn = "animate-[bounceIn_0.7s_ease-out_forwards]";
+// Animation styles - moved outside component for better performance
+const ANIMATION_CLASSES = {
+  fadeInUp: "animate-[fadeInUp_0.6s_ease-out_forwards]",
+  slideInLeft: "animate-[slideInLeft_0.8s_ease-out_forwards]",
+  slideInRight: "animate-[slideInRight_0.8s_ease-out_forwards]",
+  scaleIn: "animate-[scaleIn_0.5s_ease-out_forwards]",
+  bounceIn: "animate-[bounceIn_0.7s_ease-out_forwards]"
+} as const;
 
 // Memoized rank color mapping for better performance
 const RANK_COLORS = {
@@ -35,7 +36,7 @@ const ACHIEVEMENT_ICONS = {
   default: '🏆',
 } as const;
 
-// Calculate distance between two points (in kilometers)
+// Calculate distance between two points (in kilometers) - moved outside component
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
   const R = 6371; // Earth radius in kilometers
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -48,17 +49,17 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c;
 };
 
-// Optimized rank color getter
+// Optimized rank color getter - moved outside component
 const getRankColor = (rank: string): string => {
   return RANK_COLORS[rank.toUpperCase() as keyof typeof RANK_COLORS] || 'text-gray-400';
 };
 
-// Optimized achievement icon getter
+// Optimized achievement icon getter - moved outside component
 const getAchievementIcon = (achievement: string): string => {
-  if (achievement.includes('速度') || achievement.includes('快速') || achievement.includes('speed') || achievement.includes('fast')) return ACHIEVEMENT_ICONS.speed;
-  if (achievement.includes('完美') || achievement.includes('精确') || achievement.includes('perfect') || achievement.includes('precise')) return ACHIEVEMENT_ICONS.perfect;
-  if (achievement.includes('连续') || achievement.includes('streak')) return ACHIEVEMENT_ICONS.streak;
-  if (achievement.includes('探索') || achievement.includes('发现') || achievement.includes('exploration') || achievement.includes('discovery')) return ACHIEVEMENT_ICONS.exploration;
+  if (achievement.includes('speed') || achievement.includes('fast')) return ACHIEVEMENT_ICONS.speed;
+  if (achievement.includes('perfect') || achievement.includes('precise')) return ACHIEVEMENT_ICONS.perfect;
+  if (achievement.includes('streak')) return ACHIEVEMENT_ICONS.streak;
+  if (achievement.includes('exploration') || achievement.includes('discovery')) return ACHIEVEMENT_ICONS.exploration;
   return ACHIEVEMENT_ICONS.default;
 };
 
@@ -96,7 +97,7 @@ interface QuestionResultDetailProps {
       locationAccuracy: string;
     };
     status: 'completed';
-    // 正确的事件详情字段名
+    // Correct event details field name
     event?: {
       id: string;
       city: string;
@@ -111,7 +112,7 @@ interface QuestionResultDetailProps {
       event_descript?: string;
       difficulty?: string;
     };
-    // 兼容旧版本的字段名
+    // Compatible with legacy field names
     eventDetails?: {
       description: string;
       imageUrl: string;
@@ -156,8 +157,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
   const [isRestarting, setIsRestarting] = useState(false);
   const [restartProgress, setRestartProgress] = useState(0);
   
-  // Handle restart game functionality with progress tracking
-  const handleRestartGame = async () => {
+  // Handle restart game functionality with progress tracking - optimized with useCallback
+  const handleRestartGame = useCallback(async () => {
     try {
       setIsRestarting(true);
       setRestartProgress(0);
@@ -212,16 +213,12 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
       setRestartProgress(0);
       alert('Error restarting game. Please try again.');
     }
-  };
+  }, [router]);
   
-  // Optimized state management - only keep necessary state
-  const eventDetails = useMemo(() => {
-    return questionResult.event || null;
-  }, [questionResult.event]);
+  // Optimized state management - memoized calculations
+  const eventDetails = useMemo(() => questionResult.event || null, [questionResult.event]);
 
-  // const hasEventDetails = Boolean(eventDetails);
-
-  // 计算距离 - 使用useMemo缓存计算结果
+  // Calculate distance - cached with useMemo
   const distance = useMemo(() => calculateDistance(
     questionResult.guessedLocation.lat,
     questionResult.guessedLocation.lng,
@@ -254,81 +251,78 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
   }, [eventDetails, questionResult, yearDifference, distance]);
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white rounded-2xl overflow-hidden shadow-2xl mb-20">
-      <div className="p-6">
+    <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white rounded-2xl overflow-hidden shadow-2xl mb-52 md:mb-20">
+      <div className="p-3 sm:p-4 md:p-6">
         {/* Optimized title area - more compact layout */}
-        <div className={`relative mb-6 ${fadeInUp}`}>
-          {/* Main title bar */}
-          <div className="bg-gradient-to-r from-blue-600/30 via-purple-600/30 to-pink-600/30 rounded-2xl p-4 border border-white/20 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              {/* Left side: Question info */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-lg font-bold shadow-lg">
-                  {questionResult.questionNumber}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Question Detailed Results</h2>
-                  <div className="text-sm text-gray-300">Question {questionResult.questionNumber} Analysis</div>
-                </div>
-              </div>
-              
-              {/* Right side: Score card */}
-              <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-3 border border-yellow-500/30">
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-xs text-gray-400">Final Score</div>
-                    <div className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                      {questionResult.scoringDetails.finalScore}
-                    </div>
-                  </div>
-                  <div className="w-px h-8 bg-gray-600"></div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-400">Rank</div>
-                    <div className={`text-xl font-bold ${rankColorClass}`}>
-                      {questionResult.scoringDetails.rank}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className={`relative mb-6 ${ANIMATION_CLASSES.fadeInUp}`}>
+          {/* Main title bar - responsive layout */}
+           <div className="bg-gradient-to-r from-blue-600/30 via-purple-600/30 to-pink-600/30 rounded-2xl p-3 sm:p-4 border border-white/20 backdrop-blur-sm">
+             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center md:justify-between gap-3 sm:gap-4">
+               {/* Left side: Question info */}
+               <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-base sm:text-lg font-bold shadow-lg flex-shrink-0">
+                   {questionResult.questionNumber}
+                 </div>
+                 <div className="min-w-0 flex-1">
+                   <h2 className="text-lg sm:text-xl font-bold text-white truncate">Question Detailed Results</h2>
+                   <div className="text-xs sm:text-sm text-gray-300 truncate">Question {questionResult.questionNumber} Analysis</div>
+                 </div>
+               </div>
+               
+               {/* Right side: Score card - responsive */}
+               <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-5 border border-yellow-500/30 flex-shrink-0 min-w-0">
+                 <div className="flex items-center justify-around md:justify-center gap-6 sm:gap-8 md:gap-12">
+                   <div className="text-center flex-1">
+                     <div className="text-sm text-gray-400 mb-1">Final Score</div>
+                     <div className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                       {questionResult.scoringDetails.finalScore}
+                     </div>
+                   </div>
+                   <div className="w-px h-12 sm:h-14 md:h-16 bg-gray-600 flex-shrink-0"></div>
+                   <div className="text-center flex-1">
+                     <div className="text-sm text-gray-400 mb-1">Rank</div>
+                     <div className={`text-xl sm:text-2xl md:text-3xl font-bold ${rankColorClass}`}>
+                       {questionResult.scoringDetails.rank}
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
           
-          {/* Quick stats bar */}
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-2 text-center border border-blue-500/30">
-              <div className="text-xs text-blue-300">Answer Time</div>
-              <div className="text-sm font-bold text-white">{questionResult.answerTime}s</div>
-            </div>
-            <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-2 text-center border border-purple-500/30">
-              <div className="text-xs text-purple-300">Year Error</div>
-              <div className="text-sm font-bold text-white">±{yearDifference}</div>
-            </div>
-            <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-2 text-center border border-green-500/30">
-              <div className="text-xs text-green-300">Distance</div>
-              <div className="text-sm font-bold text-white">{distance.toFixed(0)}km</div>
-            </div>
-            <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-2 text-center border border-yellow-500/30">
-              <div className="text-xs text-yellow-300">Streak</div>
-              <div className="text-sm font-bold text-white">{questionResult.scoringDetails.streak}</div>
-            </div>
-          </div>
+          {/* Quick stats bar - responsive grid */}
+           <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-3">
+             <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-blue-500/30 transition-all duration-200 hover:bg-blue-500/30">
+               <div className="text-[10px] sm:text-xs text-blue-300 mb-1">Answer Time</div>
+               <div className="text-xs sm:text-sm font-bold text-white">{questionResult.answerTime}s</div>
+             </div>
+             <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-purple-500/30 transition-all duration-200 hover:bg-purple-500/30">
+               <div className="text-[10px] sm:text-xs text-purple-300 mb-1">Year Error</div>
+               <div className="text-xs sm:text-sm font-bold text-white">±{yearDifference}</div>
+             </div>
+             <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-green-500/30 transition-all duration-200 hover:bg-green-500/30">
+               <div className="text-[10px] sm:text-xs text-green-300 mb-1">Distance</div>
+               <div className="text-xs sm:text-sm font-bold text-white">{distance.toFixed(0)}km</div>
+             </div>
+             <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-yellow-500/30 transition-all duration-200 hover:bg-yellow-500/30">
+               <div className="text-[10px] sm:text-xs text-yellow-300 mb-1">Streak</div>
+               <div className="text-xs sm:text-sm font-bold text-white">{questionResult.scoringDetails.streak}</div>
+             </div>
+           </div>
         </div>
 
-        {/* 核心对比区域 - 图片与地图紧密排列 */}
+        {/* Core comparison area - image and map layout */}
         <div className="relative mb-8">
-          {/* <h3 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-            视觉对比分析
-          </h3> */}
           
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {/* 左侧：图片与事件信息重叠布局 */}
-            <div className={`relative group ${slideInLeft} hover-lift glow-effect`}>
+            {/* Left side: Image and event information overlay layout */}
+            <div className={`relative group ${ANIMATION_CLASSES.slideInLeft} hover-lift glow-effect`}>
               <div className="relative h-[300px] sm:h-[350px] md:h-[400px] rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl transition-all duration-500 group-hover:border-blue-400/50">
                 {eventDetails?.image_url ? (
                   <GameImage imageUrl={eventDetails.image_url} eventName={eventDetails.event_name} />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                    <div className={`text-center ${bounceIn}`}>
+                    <div className={`text-center ${ANIMATION_CLASSES.bounceIn}`}>
                       <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center animate-pulse">
                         <MapPin className="w-8 h-8 text-gray-400" />
                       </div>
@@ -337,7 +331,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                   </div>
                 )}
                 
-                {/* 悬浮信息卡片 */}
+                {/* Floating information card */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
@@ -354,8 +348,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
               </div>
             </div>
 
-            {/* 右侧：地图与数据重叠布局 - 响应式高度 */}
-            <div className={`relative group ${slideInRight} hover-lift glow-effect`}>
+            {/* Right side: Map and data overlay layout - responsive height */}
+            <div className={`relative group ${ANIMATION_CLASSES.slideInRight} hover-lift glow-effect`}>
               <div className="relative h-[300px] sm:h-[350px] md:h-[400px] rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl transition-all duration-500 group-hover:border-green-400/50">
                 <GameMap
                   guessLocation={questionResult.guessedLocation}
@@ -364,8 +358,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                   onMapClick={undefined}
                 />
                 
-                {/* 优化的紧凑型城市信息面板 - 左上角 */}
-                <div className={`absolute top-2 sm:top-3 left-2 sm:left-3 bg-black/70 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-white/20 shadow-lg ${scaleIn} max-w-[150px] sm:max-w-[200px]`}>
+                {/* Optimized compact city information panel - top left */}
+                <div className={`absolute top-2 sm:top-3 left-2 sm:left-3 bg-black/70 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-white/20 shadow-lg ${ANIMATION_CLASSES.scaleIn} max-w-[150px] sm:max-w-[200px]`}>
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <div className="w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 rounded-full flex items-center justify-center">
                       <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
@@ -378,8 +372,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                   </div>
                 </div>
 
-                {/* 年份对比面板 - 右上角紧凑布局 */}
-                <div className={`absolute top-2 sm:top-3 right-2 sm:right-3 flex gap-1.5 sm:gap-2 ${scaleIn}`}>
+                {/* Year comparison panel - top right compact layout */}
+                <div className={`absolute top-2 sm:top-3 right-2 sm:right-3 flex gap-1.5 sm:gap-2 ${ANIMATION_CLASSES.scaleIn}`}>
                   <div className="bg-red-500/80 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-red-400/60 min-w-[60px] sm:min-w-[80px]">
                     <div className="text-center">
                       <div className="text-[10px] sm:text-xs text-red-100 mb-0.5 sm:mb-1">Your Guess</div>
@@ -394,8 +388,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                   </div>
                 </div>
 
-                {/* 距离信息面板 - 调整到右侧偏下位置 */}
-                <div className={`absolute right-2 sm:right-3 bottom-12 sm:bottom-10 bg-blue-500/80 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-blue-400/60 ${bounceIn} max-w-[120px] sm:max-w-[160px]`}>
+                {/* Distance information panel - adjusted to right side lower position */}
+                <div className={`absolute right-2 sm:right-3 bottom-12 sm:bottom-10 bg-blue-500/80 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-blue-400/60 ${ANIMATION_CLASSES.bounceIn} max-w-[120px] sm:max-w-[160px]`}>
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-400 rounded-full flex items-center justify-center">
                       <Navigation className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
@@ -407,8 +401,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                   </div>
                 </div>
 
-                {/* 简化的距离可视化条 - 移到左下角避免与Google标识重叠 */}
-                <div className={`absolute bottom-12 sm:bottom-14 left-2 sm:left-3 bg-black/70 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1.5 sm:py-2 border border-white/20 ${bounceIn}`}>
+                {/* Simplified distance visualization bar - moved to bottom left to avoid Google logo overlap */}
+                <div className={`absolute bottom-12 sm:bottom-14 left-2 sm:left-3 bg-black/70 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1.5 sm:py-2 border border-white/20 ${ANIMATION_CLASSES.bounceIn}`}>
                   <div className="flex items-center gap-2 sm:gap-3 min-w-[140px] sm:min-w-[180px]">
                     <span className="text-[10px] sm:text-xs text-gray-300 whitespace-nowrap">Precise</span>
                     <div className="flex-1 bg-gray-600/80 rounded-full h-1.5 sm:h-2">
@@ -429,7 +423,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
 
         {/* Event Information Display Area - Located below image and map */}
         {(eventDetails?.event_detail || eventDetails?.description || eventDetails?.city) && (
-          <div className={`mb-8 ${fadeInUp}`}>
+          <div className={`mb-8 ${ANIMATION_CLASSES.fadeInUp}`}>
             <div className="bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-cyan-600/20 rounded-2xl p-6 border border-emerald-500/30">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center">
@@ -465,7 +459,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
         )}
 
         {/* Comprehensive Analysis Area - Integrating all statistical information */}
-        <div className={`mb-8 ${fadeInUp}`}>
+        <div className={`mb-8 ${ANIMATION_CLASSES.fadeInUp}`}>
           <h3 className="text-xl font-bold mb-4 text-center bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             📊 Comprehensive Analysis Report
           </h3>
@@ -499,33 +493,6 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
               </div>
             </div>
           </div>
-
-          {/* Achievement and Performance Analysis */}
-          {questionResult.scoringDetails.achievements.length > 0 && (
-            <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 rounded-2xl p-6 border border-yellow-500/30">
-              <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span className="text-2xl">🏆</span>
-                Achievements Earned ({questionResult.scoringDetails.achievements.length})
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {questionResult.scoringDetails.achievements.map((achievement, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center gap-3 bg-black/30 rounded-lg p-3 border border-yellow-500/20"
-                  >
-                    <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full 
-                                  flex items-center justify-center text-lg">
-                      {getAchievementIcon(achievement)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-yellow-300 font-medium">{achievement}</div>
-                      <div className="text-xs text-gray-400">Achievement unlocked</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

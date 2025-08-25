@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { MapPin, Play, Clock, Target, Trophy } from "lucide-react";
+import Image from "next/image";
+import { Play, Clock, Target, Trophy } from "lucide-react";
 import { memo } from "react";
 
 const HeroSection = memo(() => {
@@ -9,7 +10,13 @@ const HeroSection = memo(() => {
       <div className="container mx-auto px-4">
         <div className="text-center max-w-6xl mx-auto">
           <div className="mb-8 flex items-center justify-center gap-4">
-            <MapPin className="h-16 w-16 text-[#CF142B]" />
+            <Image
+              src="/logo.svg"
+              alt="TimeGuessr Logo"
+              width={64}
+              height={64}
+              className="h-16 w-16"
+            />
             <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-[#CF142B] to-[#00205B] bg-clip-text text-transparent">
               TimeGuessr
             </h1>

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { MapPin } from "lucide-react";
+import Image from "next/image";
 import { RoundScoreDisplay } from "@/components/game/round-score-display";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimplePreferences } from "./simple-preferences";
@@ -28,8 +28,14 @@ export const GameHeader = memo(function GameHeader({
     <header className="relative z-50 bg-gradient-to-r from-slate-900/40 via-gray-800/30 to-slate-900/40 backdrop-blur-2xl border-b border-white/10 pointer-events-auto">
       <div className="flex justify-between items-center px-8 py-4">
         <div className="flex items-center gap-4 cursor-pointer" onClick={() => router.push('/')}>
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center shadow-2xl border-2 border-blue-400/30">
-            <MapPin className="h-6 w-6 text-white" />
+          <div className="w-12 h-12 flex items-center justify-center">
+            <Image
+              src="/logo.svg"
+              alt="TimeGuessr Logo"
+              width={48}
+              height={48}
+              className="w-12 h-12"
+            />
           </div>
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">

@@ -157,90 +157,90 @@ const Game = React.memo(() => {
   }, []);
 
   // Load current question - on-demand loading version with enhanced error handling
-  const loadCurrentQuestion = useCallback(async (savedProgress: GameProgress) => {
-    try {
-      setIsLoading(true);
-      console.log(`[LoadQuestion] Starting load for round ${savedProgress.currentRound}`);
+  // const loadCurrentQuestion = useCallback(async (savedProgress: GameProgress) => {
+  //   try {
+  //     setIsLoading(true);
+  //     console.log(`[LoadQuestion] Starting load for round ${savedProgress.currentRound}`);
       
-      // Check if there are more questions
-      if (savedProgress.currentRound > savedProgress.totalRounds) {
-        console.log('[LoadQuestion] All questions completed, going to summary');
-        setGameState("summary");
-        setIsLoading(false);
-        return;
-      }
+  //     // Check if there are more questions
+  //     if (savedProgress.currentRound > savedProgress.totalRounds) {
+  //       console.log('[LoadQuestion] All questions completed, going to summary');
+  //       setGameState("summary");
+  //       setIsLoading(false);
+  //       return;
+  //     }
       
-      // Only load current needed event, not all events
-      const currentEventIndex = savedProgress.currentRound - 1;
-      let currentEvent: EventDetail | null = null;
+  //     // Only load current needed event, not all events
+  //     const currentEventIndex = savedProgress.currentRound - 1;
+  //     let currentEvent: EventDetail | null = null;
       
-      // Check if current event is already saved
-      if (savedProgress.events[currentEventIndex]) {
-        currentEvent = savedProgress.events[currentEventIndex];
-        console.log(`[LoadQuestion] Using cached event: ${currentEvent!.city} (${currentEvent!.year})`);
-      } else {
-        // Load current event on-demand with retry mechanism
-        const eventId = savedProgress.eventIds[currentEventIndex];
-        console.log(`[LoadQuestion] Loading event ${eventId} for round ${savedProgress.currentRound}`);
+  //     // Check if current event is already saved
+  //     if (savedProgress.events[currentEventIndex]) {
+  //       currentEvent = savedProgress.events[currentEventIndex];
+  //       console.log(`[LoadQuestion] Using cached event: ${currentEvent!.city} (${currentEvent!.year})`);
+  //     } else {
+  //       // Load current event on-demand with retry mechanism
+  //       const eventId = savedProgress.eventIds[currentEventIndex];
+  //       console.log(`[LoadQuestion] Loading event ${eventId} for round ${savedProgress.currentRound}`);
         
-        try {
-          currentEvent = await retryWithBackoff(async () => {
-            return await GameAPIService.getEventDetail(eventId);
-          });
+  //       try {
+  //         currentEvent = await retryWithBackoff(async () => {
+  //           return await GameAPIService.getEventDetail(eventId);
+  //         });
           
-          if (!currentEvent) {
-            throw new Error('Event details are empty');
-          }
+  //         if (!currentEvent) {
+  //           throw new Error('Event details are empty');
+  //         }
           
-          console.log(`[LoadQuestion] Successfully loaded event: ${currentEvent.city} (${currentEvent.year})`);
-        } catch (error) {
-          console.error(`[LoadQuestion] Failed to load event ${eventId} after retries:`, error);
-          setError(`Failed to load question ${savedProgress.currentRound}. Please check your network connection and try again.`);
-          setIsLoading(false);
-          return;
-        }
-      }
+  //         console.log(`[LoadQuestion] Successfully loaded event: ${currentEvent.city} (${currentEvent.year})`);
+  //       } catch (error) {
+  //         console.error(`[LoadQuestion] Failed to load event ${eventId} after retries:`, error);
+  //         setError(`Failed to load question ${savedProgress.currentRound}. Please check your network connection and try again.`);
+  //         setIsLoading(false);
+  //         return;
+  //       }
+  //     }
       
-      // Check if currentEvent is null
-      if (!currentEvent) {
-        console.error('[LoadQuestion] Current event is null after loading');
-        setError('Failed to load question data');
-        setIsLoading(false);
-        return;
-      }
+  //     // Check if currentEvent is null
+  //     if (!currentEvent) {
+  //       console.error('[LoadQuestion] Current event is null after loading');
+  //       setError('Failed to load question data');
+  //       setIsLoading(false);
+  //       return;
+  //     }
       
-      // Initialize events array, only set current event
-      const eventsArray: EventDetail[] = new Array(savedProgress.eventIds.length);
-      eventsArray[currentEventIndex] = currentEvent;
+  //     // Initialize events array, only set current event
+  //     const eventsArray: EventDetail[] = new Array(savedProgress.eventIds.length);
+  //     eventsArray[currentEventIndex] = currentEvent;
       
-      // Copy other saved events if any
-      savedProgress.events.forEach((event, index) => {
-        if (event && index !== currentEventIndex) {
-          eventsArray[index] = event;
-        }
-      });
+  //     // Copy other saved events if any
+  //     savedProgress.events.forEach((event, index) => {
+  //       if (event && index !== currentEventIndex) {
+  //         eventsArray[index] = event;
+  //       }
+  //     });
       
-      setEvents(eventsArray);
-      setCurrentEvent(currentEvent);
+  //     setEvents(eventsArray);
+  //     setCurrentEvent(currentEvent);
       
-      // Reset timer to initial value and start timer
-      const settings = PlayerSettingsManager.loadSettings();
-      setTimeRemaining(settings.defaultTimeLimit || 120);
-      setIsTimerStopped(false);
-      setTimeWarning(false);
-      console.log(`[LoadQuestion] Timer reset to ${settings.defaultTimeLimit || 120} seconds for new question`);
+  //     // Reset timer to initial value and start timer
+  //     const settings = PlayerSettingsManager.loadSettings();
+  //     setTimeRemaining(settings.defaultTimeLimit || 120);
+  //     setIsTimerStopped(false);
+  //     setTimeWarning(false);
+  //     console.log(`[LoadQuestion] Timer reset to ${settings.defaultTimeLimit || 120} seconds for new question`);
       
-      setIsLoading(false);
-      setGameState("guessing");
-      setQuestionStartTime(Date.now());
-      console.log(`[LoadQuestion] Successfully loaded round ${savedProgress.currentRound}`);
+  //     setIsLoading(false);
+  //     setGameState("guessing");
+  //     setQuestionStartTime(Date.now());
+  //     console.log(`[LoadQuestion] Successfully loaded round ${savedProgress.currentRound}`);
       
-    } catch (error) {
-      console.error('[LoadQuestion] Unexpected error:', error);
-      setError('An unexpected error occurred while loading the question');
-      setIsLoading(false);
-    }
-  }, [retryWithBackoff]);
+  //   } catch (error) {
+  //     console.error('[LoadQuestion] Unexpected error:', error);
+  //     setError('An unexpected error occurred while loading the question');
+  //     setIsLoading(false);
+  //   }
+  // }, [retryWithBackoff]);
 
   // Load game progress
   const loadGameProgress = useCallback(() => {
@@ -1165,7 +1165,7 @@ const Game = React.memo(() => {
       )}
 
       {/* 背景图片 */}
-      {currentEvent && <BackgroundImage imageUrl={currentEvent.imageUrl || ''} />}
+      {currentEvent && <BackgroundImage imageUrl={currentEvent.imageUrl || currentEvent.image_url || ''} />}
 
       {/* 游戏头部 */}
       <GameHeader
@@ -1185,10 +1185,17 @@ const Game = React.memo(() => {
           {/* 中央图片区域 */}
           <div className="absolute w-full md:w-1/2 left-1/2 top-32 md:top-10 transform -translate-x-1/2 z-20 pointer-events-auto px-4 md:px-0" 
                style={{ height: 'calc(100vh - 400px)', maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}>
-            <GameImage 
-              imageUrl={currentEvent.imageUrl || ''} 
-              eventName={currentEvent.description || ''}
-            />
+            {(() => {
+              // console.log('Before GameImage render - currentEvent:', currentEvent);
+              // console.log('Before GameImage render - imageUrl:', currentEvent.imageUrl);
+              // console.log('Before GameImage render - description:', currentEvent.description);
+              return (
+                <GameImage 
+                  imageUrl={currentEvent.imageUrl || currentEvent.image_url || ''} 
+                  eventName={currentEvent.description || ''}
+                />
+              );
+            })()}
           </div>
 
           {/* Mobile info panel */}

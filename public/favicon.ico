@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <!-- Background circle -->
+  <circle cx="8" cy="8" r="7" fill="#00205B"/>
+  
+  <!-- Clock simplified -->
+  <circle cx="8" cy="8" r="5" fill="none" stroke="#CF142B" stroke-width="1"/>
+  
+  <!-- Clock hands -->
+  <line x1="8" y1="4" x2="8" y2="8" stroke="#CF142B" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="8" y1="8" x2="11" y2="8" stroke="#CF142B" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="8" cy="8" r="1" fill="#CF142B"/>
+  
+  <!-- Simplified map pin -->
+  <path d="M6 6 C6 5, 7 4, 8 4 C9 4, 10 5, 10 6 C10 7, 8 10, 8 10 C8 10, 6 7, 6 6 Z" fill="#CF142B" opacity="0.8"/>
+  <circle cx="8" cy="6" r="0.8" fill="white"/>
+</svg>

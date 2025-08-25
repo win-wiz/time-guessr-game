@@ -1,12 +1,14 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function About() {
   return (
-    <main className="min-h-screen bg-background text-foreground dark:bg-gray-900 light:bg-gray-100">
+    <main className="min-h-screen bg-white text-black dark:bg-[#001233] dark:text-white">
       <Header />
       <div className="container mx-auto p-6">
         <div className="mb-6">
@@ -19,7 +21,13 @@ export default function About() {
         </div>
 
         <div className="flex items-center gap-2 mb-6">
-          <MapPin className="h-8 w-8 text-[#CF142B]" />
+          <Image
+            src="/logo.svg"
+            alt="TimeGuessr Logo"
+            width={32}
+            height={32}
+            className="h-8 w-8"
+          />
           <h1 className="text-3xl font-bold dark:text-white light:text-[#00205B]">
             About TimeGuessr
           </h1>
@@ -95,6 +103,7 @@ export default function About() {
           </Card>
         </div>
       </div>
+      <Footer />
     </main>
   );
 }

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <!-- Background circle -->
+  <circle cx="24" cy="24" r="22" fill="#00205B" stroke="#CF142B" stroke-width="2"/>
+  
+  <!-- Clock face -->
+  <circle cx="24" cy="24" r="14" fill="none" stroke="#CF142B" stroke-width="2"/>
+  
+  <!-- Clock hands -->
+  <line x1="24" y1="14" x2="24" y2="24" stroke="#CF142B" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="24" y1="24" x2="32" y2="24" stroke="#CF142B" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="24" cy="24" r="2" fill="#CF142B"/>
+  
+  <!-- Map pin overlay -->
+  <path d="M19 19 C19 16.5, 21.5 14, 24 14 C26.5 14, 29 16.5, 29 19 C29 21.5, 24 28, 24 28 C24 28, 19 21.5, 19 19 Z" fill="#CF142B" opacity="0.9"/>
+  <circle cx="24" cy="19" r="2.5" fill="white"/>
+  
+  <!-- Time markers -->
+  <circle cx="24" cy="10" r="1" fill="#CF142B"/>
+  <circle cx="38" cy="24" r="1" fill="#CF142B"/>
+  <circle cx="24" cy="38" r="1" fill="#CF142B"/>
+  <circle cx="10" cy="24" r="1" fill="#CF142B"/>
+</svg>

@@ -1,11 +1,41 @@
 import type React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "TimeGuessr",
-  description: "Test your knowledge of Guess streets",
+  title: "TimeGuessr - Play Geography Game Online | Street View Quiz",
+  description: "Play TimeGuessr, the ultimate geography guessing game! Test your world knowledge with street view challenges. Join millions playing TimeGuessr today.",
+  keywords: "TimeGuessr, geography game, street view quiz, world geography, guessing game, location quiz, geography challenge, educational game, online geography, TimeGuessr game",
+  authors: [{ name: "TimeGuessr Team" }],
+  creator: "TimeGuessr",
+  publisher: "TimeGuessr",
+  robots: "index, follow",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico"
+  },
+  openGraph: {
+    title: "TimeGuessr - Play Geography Game Online",
+    description: "Play TimeGuessr, the ultimate geography guessing game! Test your world knowledge with street view challenges.",
+    type: "website",
+    locale: "en_US",
+    siteName: "TimeGuessr",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TimeGuessr - Play Geography Game Online",
+    description: "Play TimeGuessr, the ultimate geography guessing game! Test your world knowledge with street view challenges.",
+    creator: "@TimeGuessr",
+  },
+  category: "games",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#CF142B",
 };
 
 export default function RootLayout({

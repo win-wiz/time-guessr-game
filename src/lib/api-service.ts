@@ -4,6 +4,7 @@ import { getCachedResponse, setCachedResponse, deduplicateRequest } from './api-
 // 基础API配置
 const API_CONFIG = {
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '',
+  apiKey: process.env.NEXT_PUBLIC_API_KEY || '',
   timeout: 10000,
   retryAttempts: 3,
   retryDelay: 1000,
@@ -27,12 +28,14 @@ export interface APIResponse<T = any> {
 // HTTP客户端类
 class APIClient {
   private baseURL: string;
+  private apiKey: string;
   private timeout: number;
   private retryAttempts: number;
   private retryDelay: number;
 
   constructor(config: typeof API_CONFIG) {
     this.baseURL = config.baseURL;
+    this.apiKey = config.apiKey;
     this.timeout = config.timeout;
     this.retryAttempts = config.retryAttempts;
     this.retryDelay = config.retryDelay;
@@ -45,7 +48,7 @@ class APIClient {
     useCache: boolean = false,
     cacheTTL: number = 300000
   ): Promise<APIResponse<T>> {
-    const url = endpoint.startsWith('http') ? endpoint : `/api${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}/api${endpoint}`;
     const cacheKey = `${url}_${JSON.stringify(options.body || {})}`;
 
     // 检查缓存
@@ -70,6 +73,7 @@ class APIClient {
             signal: controller.signal,
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
               ...options.headers,
             },
           });
@@ -181,6 +185,7 @@ export interface EventDetail {
   year: number;
   description?: string;
   imageUrl?: string;
+  image_url?: string;
   difficulty?: string;
 }
 

@@ -15,6 +15,9 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
 
+  console.log('imgUrl ======>>>', imageUrl);
+  console.log('eventName ======>>>', eventName);
+  console.log('GameImage props:', { imageUrl, eventName });
   // Memoize image source and alt text
   const imageSrc = useMemo(() => imageUrl || "/placeholder.svg", [imageUrl])
   const imageAlt = useMemo(() => eventName || "Historical event image", [eventName])
