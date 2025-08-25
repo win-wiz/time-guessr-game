@@ -48,6 +48,7 @@ class APIClient {
     useCache: boolean = false,
     cacheTTL: number = 300000
   ): Promise<APIResponse<T>> {
+    console.log('endpoint =========>>>', endpoint);
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}/api${endpoint}`;
     const cacheKey = `${url}_${JSON.stringify(options.body || {})}`;
 
