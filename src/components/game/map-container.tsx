@@ -3,56 +3,59 @@
 import { memo, useCallback } from "react";
 import { MapPin, Maximize2, Minimize2 } from "lucide-react";
 import { GameMap } from "@/components/game-map";
+import { YearControlBar } from "@/components/game/mobile-info-panel";
 
 interface MapContainerProps {
   onMapClick: (lat: number, lng: number) => void;
   guessLocation: { lat: number; lng: number } | null;
   isMapExpanded: boolean;
   onToggleExpanded: () => void;
+  // 移动端年份选择器相关props
+  selectedYear?: number;
+  onYearChange?: (year: number) => void;
+  currentYear?: number;
+  isMobile?: boolean;
 }
 
 export const MapContainer = memo(function MapContainer({
   onMapClick,
   guessLocation,
-  isMapExpanded,
-  onToggleExpanded
+  // isMapExpanded,
+  onToggleExpanded,
+  // selectedYear,
+  // onYearChange,
+  // currentYear,
+  // isMobile = false
 }: MapContainerProps) {
-  const handleToggleExpanded = useCallback(() => {
-    onToggleExpanded();
-  }, [onToggleExpanded]);
+  // const handleToggleExpanded = useCallback(() => {
+  //   onToggleExpanded();
+  // }, [onToggleExpanded]);
 
   return (
     <div className="w-full pointer-events-auto" data-map-container>
-      <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl relative isolate">
-        <div className="p-3 md:p-4">
-          <div className="flex items-center justify-between mb-2 md:mb-3">
-            <h3 className="text-sm md:text-lg font-bold text-white flex items-center gap-2">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center border border-blue-400/40">
-                <MapPin className="w-3 h-3 md:w-4 md:h-4 text-white" />
+      <div className="relative">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="hidden md:flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center border border-emerald-400/40 shadow-lg">
+                <MapPin className="w-5 h-5 text-white" />
               </div>
-              <span className="hidden md:inline">Mark location on map</span>
-        <span className="md:hidden">Mark location</span>
-            </h3>
+              <div>
+                <h3 className="text-white font-semibold text-base">Map Location</h3>
+                <p className="text-white/60 text-sm">Tap to mark your guess</p>
+              </div>
+            </div>
             
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-3">
               {guessLocation && (
-                <div className="bg-emerald-600/30 border border-emerald-500/60 text-emerald-300 px-2 py-1 rounded-full text-xs font-medium">
-                  ✓ 已标记
+                <div className="bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 px-3 py-1.5 rounded-xl text-sm font-medium backdrop-blur-sm shadow-lg">
+                  ✓ Marked
                 </div>
               )}
-              
-              <button
-                onClick={handleToggleExpanded}
-                className="p-1.5 md:p-2 bg-gray-700/60 hover:bg-gray-600/70 rounded-full transition-colors border border-gray-600/40"
-              >
-                {isMapExpanded ? <Minimize2 className="w-3 h-3 md:w-4 md:h-4 text-gray-200" /> : <Maximize2 className="w-3 h-3 md:w-4 md:h-4 text-gray-200" />}
-              </button>
             </div>
           </div>
           
-          <div className={`rounded-xl overflow-hidden border border-white/10 shadow-xl transition-all duration-500 ${
-            isMapExpanded ? 'h-[300px] md:h-[500px]' : 'h-24 md:h-32'
-          }`}>
+          <div className="rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-black/20 backdrop-blur-sm transition-all duration-500 h-[250px] md:h-[350px] lg:h-[425px]">
             <GameMap
               onMapClick={onMapClick}
               guessLocation={guessLocation}

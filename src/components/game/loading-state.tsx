@@ -147,36 +147,44 @@ const LoadingHeader = memo(function LoadingHeader({
   scores = []
 }: LoadingHeaderProps) {
   return (
-    <header className="relative z-50 bg-gradient-to-r from-slate-900/40 via-gray-800/30 to-slate-900/40 backdrop-blur-2xl border-b border-white/10">
-      <div className="flex justify-between items-center px-8 py-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 flex items-center justify-center animate-pulse">
+    <header className="relative md:relative fixed md:static top-0 left-0 right-0 z-50 bg-gradient-to-r from-slate-900/40 via-gray-800/30 to-slate-900/40 backdrop-blur-2xl border-b border-white/10">
+      <div className="flex justify-between items-center px-3 sm:px-6 md:px-8 py-3 sm:py-4">
+        {/* Logo区域 - 响应式优化 */}
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center animate-pulse flex-shrink-0">
             <Image
               src="/logo.svg"
               alt="TimeGuessr Logo"
               width={48}
               height={48}
-              className="w-12 h-12"
+              className="w-full h-full"
             />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent truncate">
               TimeGuessr
             </h1>
-            <div className="text-sm text-blue-200/90">Historical Time Machine</div>
+            <div className="text-xs sm:text-sm text-blue-200/90 hidden sm:block">Historical Time Machine</div>
           </div>
         </div>
         
-        <div className="flex items-center gap-8">
-          {/* Use unified Round and Score display component */}
+        {/* 右侧控制区域 - 响应式优化 */}
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
           <RoundScoreDisplay
             currentRound={currentRound}
             totalRounds={totalRounds}
             scores={scores}
             variant="loading"
             showProgress={true}
-            className="animate-pulse"
+            className="animate-pulse hidden xs:flex"
           />
+          {/* 移动端显示简化版本的轮次信息 */}
+          <div className="flex xs:hidden items-center gap-1 text-white animate-pulse">
+            <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center">
+              <span className="text-xs font-bold">{currentRound}</span>
+            </div>
+            <span className="text-xs font-medium">{currentRound}/{totalRounds}</span>
+          </div>
         </div>
       </div>
     </header>
@@ -226,7 +234,7 @@ export const LoadingState = memo(function LoadingState({
       <LoadingHeader {...headerProps} />
 
       {/* Main content area */}
-      <div className="flex-1 relative z-10 flex items-center justify-center">
+      <div className="flex-1 relative z-10 flex items-center justify-center pt-20 md:pt-0">
         <div className="text-center space-y-8">
           {/* Main loading animation */}
           <div className="relative">

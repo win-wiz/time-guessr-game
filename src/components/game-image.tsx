@@ -99,10 +99,10 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
   }, [])
 
   return (
-    <Card className="h-[calc(100vh - 300px)] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-2 border-gray-200 dark:border-gray-700 shadow-lg">
+    <Card className="h-full overflow-hidden bg-gradient-to-br from-slate-900/80 to-slate-800/60 backdrop-blur-md rounded-2xl p-1 border border-white/30 shadow-2xl">
       <div 
         ref={containerRef}
-        className="relative h-full w-full cursor-grab active:cursor-grabbing flex items-center justify-center"
+        className="relative h-full w-full cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl overflow-hidden bg-black/20"
         style={{ maxHeight: '100%', height: '100%' }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
@@ -113,7 +113,7 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
         <img
           src={imageSrc}
           alt={imageAlt}
-          className="w-full h-full object-cover transition-transform duration-200 ease-out"
+          className="transition-all duration-300 ease-out h-full w-full object-cover image-enhanced"
           style={transformStyle}
           draggable={false}
         />
@@ -122,16 +122,25 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
         {showResetButton && (
           <button
             onClick={resetZoom}
-            className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
+            className="absolute top-3 right-3 bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-500 hover:to-purple-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg backdrop-blur-sm border border-white/20"
           >
+            {/* 翻译成英文 */}
             Reset Zoom
           </button>
         )}
         
         {/* Zoom hint */}
-        <div className="absolute bottom-4 left-4 bg-black/50 text-white px-2 py-1 rounded text-xs">
+        <div className="absolute bottom-3 left-3 bg-gradient-to-r from-slate-900/90 to-slate-800/90 text-white px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-sm border border-white/20 shadow-lg">
           {zoomHintText}
         </div>
+        
+        {/* AI Generated watermark */}
+        <div className="absolute bottom-3 right-3 text-white/50 text-xs font-medium pointer-events-none" style={{ fontSize: '12px' }}>
+          AI Generated
+        </div>
+        
+        {/* Image overlay gradient for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 pointer-events-none" />
       </div>
     </Card>
   )

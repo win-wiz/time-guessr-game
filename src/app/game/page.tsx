@@ -7,8 +7,8 @@ import { GameImage } from "@/components/game-image";
 // Import split components
 import { BackgroundImage } from "@/components/game/background-image";
 import { GameHeader } from "@/components/game/game-header";
-import { MobileInfoPanel } from "@/components/game/mobile-info-panel";
-import { DesktopStatusPanel } from "@/components/game/desktop-status-panel";
+// import { MobileInfoPanel, YearControlBar } from "@/components/game/mobile-info-panel";
+import { DesktopStatusPanel, YearSelector } from "@/components/game/desktop-status-panel";
 import { GameHint } from "@/components/game/game-hint";
 import { SubmitButton } from "@/components/game/submit-button";
 import { MapContainer } from "@/components/game/map-container";
@@ -32,6 +32,7 @@ import {
 
 // Import round manager
 import { loadResumeInfo } from "@/lib/game-round-manager";
+import { currentMaxYear } from "@/lib/utils";
 
 const currentYear = new Date().getFullYear();
 
@@ -63,7 +64,7 @@ const Game = React.memo(() => {
   const [timeWarning, setTimeWarning] = useState<boolean>(false); // Time warning state
   const [isTimerStopped, setIsTimerStopped] = useState(false); // Control timer stop state
   const [submitError, setSubmitError] = useState<string | null>(null); // Submit error state
-  const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [isMapExpanded, setIsMapExpanded] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false); // Submitting state
   const [questionStartTime, setQuestionStartTime] = useState<number>(0);
@@ -155,92 +156,6 @@ const Game = React.memo(() => {
     }
     throw new Error('Max retries exceeded');
   }, []);
-
-  // Load current question - on-demand loading version with enhanced error handling
-  // const loadCurrentQuestion = useCallback(async (savedProgress: GameProgress) => {
-  //   try {
-  //     setIsLoading(true);
-  //     console.log(`[LoadQuestion] Starting load for round ${savedProgress.currentRound}`);
-      
-  //     // Check if there are more questions
-  //     if (savedProgress.currentRound > savedProgress.totalRounds) {
-  //       console.log('[LoadQuestion] All questions completed, going to summary');
-  //       setGameState("summary");
-  //       setIsLoading(false);
-  //       return;
-  //     }
-      
-  //     // Only load current needed event, not all events
-  //     const currentEventIndex = savedProgress.currentRound - 1;
-  //     let currentEvent: EventDetail | null = null;
-      
-  //     // Check if current event is already saved
-  //     if (savedProgress.events[currentEventIndex]) {
-  //       currentEvent = savedProgress.events[currentEventIndex];
-  //       console.log(`[LoadQuestion] Using cached event: ${currentEvent!.city} (${currentEvent!.year})`);
-  //     } else {
-  //       // Load current event on-demand with retry mechanism
-  //       const eventId = savedProgress.eventIds[currentEventIndex];
-  //       console.log(`[LoadQuestion] Loading event ${eventId} for round ${savedProgress.currentRound}`);
-        
-  //       try {
-  //         currentEvent = await retryWithBackoff(async () => {
-  //           return await GameAPIService.getEventDetail(eventId);
-  //         });
-          
-  //         if (!currentEvent) {
-  //           throw new Error('Event details are empty');
-  //         }
-          
-  //         console.log(`[LoadQuestion] Successfully loaded event: ${currentEvent.city} (${currentEvent.year})`);
-  //       } catch (error) {
-  //         console.error(`[LoadQuestion] Failed to load event ${eventId} after retries:`, error);
-  //         setError(`Failed to load question ${savedProgress.currentRound}. Please check your network connection and try again.`);
-  //         setIsLoading(false);
-  //         return;
-  //       }
-  //     }
-      
-  //     // Check if currentEvent is null
-  //     if (!currentEvent) {
-  //       console.error('[LoadQuestion] Current event is null after loading');
-  //       setError('Failed to load question data');
-  //       setIsLoading(false);
-  //       return;
-  //     }
-      
-  //     // Initialize events array, only set current event
-  //     const eventsArray: EventDetail[] = new Array(savedProgress.eventIds.length);
-  //     eventsArray[currentEventIndex] = currentEvent;
-      
-  //     // Copy other saved events if any
-  //     savedProgress.events.forEach((event, index) => {
-  //       if (event && index !== currentEventIndex) {
-  //         eventsArray[index] = event;
-  //       }
-  //     });
-      
-  //     setEvents(eventsArray);
-  //     setCurrentEvent(currentEvent);
-      
-  //     // Reset timer to initial value and start timer
-  //     const settings = PlayerSettingsManager.loadSettings();
-  //     setTimeRemaining(settings.defaultTimeLimit || 120);
-  //     setIsTimerStopped(false);
-  //     setTimeWarning(false);
-  //     console.log(`[LoadQuestion] Timer reset to ${settings.defaultTimeLimit || 120} seconds for new question`);
-      
-  //     setIsLoading(false);
-  //     setGameState("guessing");
-  //     setQuestionStartTime(Date.now());
-  //     console.log(`[LoadQuestion] Successfully loaded round ${savedProgress.currentRound}`);
-      
-  //   } catch (error) {
-  //     console.error('[LoadQuestion] Unexpected error:', error);
-  //     setError('An unexpected error occurred while loading the question');
-  //     setIsLoading(false);
-  //   }
-  // }, [retryWithBackoff]);
 
   // Load game progress
   const loadGameProgress = useCallback(() => {
@@ -1156,7 +1071,7 @@ const Game = React.memo(() => {
   }
 
   return (
-    <main className="h-screen bg-black text-white flex flex-col relative overflow-hidden">
+    <main className="h-screen bg-black text-white flex flex-col relative md:overflow-hidden">
       {/* Error message */}
       {error && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-4 py-2 rounded-lg">
@@ -1172,6 +1087,7 @@ const Game = React.memo(() => {
         currentRound={currentRound}
         totalRounds={totalRounds}
         scores={scores}
+        timeRemaining={timeRemaining}
         onSettingsChange={() => {
           // Reload settings
           const newSettings = PlayerSettingsManager.loadSettings();
@@ -1181,135 +1097,207 @@ const Game = React.memo(() => {
       />
       
       {gameState === "guessing" && currentEvent && (
-        <div className="relative z-10 pointer-events-none flex-1">
-          {/* 中央图片区域 */}
-          <div className="absolute w-full md:w-1/2 left-1/2 top-32 md:top-10 transform -translate-x-1/2 z-20 pointer-events-auto px-4 md:px-0" 
-               style={{ height: 'calc(100vh - 400px)', maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}>
-            {(() => {
-              // console.log('Before GameImage render - currentEvent:', currentEvent);
-              // console.log('Before GameImage render - imageUrl:', currentEvent.imageUrl);
-              // console.log('Before GameImage render - description:', currentEvent.description);
-              return (
+        <div className="relative z-10 flex-1">
+          {/* Mobile layout - 整页滚动设计 */}
+          <div className="md:hidden h-full pointer-events-auto">
+            {/* 滚动内容区域 - 添加顶部间距避免被固定头部遮挡 */}
+            <div className="h-full overflow-y-auto overscroll-y-contain pt-20 md:pt-0">
+              <div className="min-h-screen flex flex-col pb-safe">
+
+                {/* 图片区域 */}
+                <div className="flex-shrink-0 p-3 pointer-events-auto">
+                  <div className="aspect-[4/3] w-full">
+                    <GameImage 
+                      imageUrl={currentEvent.imageUrl || currentEvent.image_url || ''} 
+                      eventName={currentEvent.description || ''}
+                    />
+                  </div>
+                </div>
+
+                {/* 控制区域 */}
+                <div className="flex-1 bg-slate-900/95 backdrop-blur-sm pointer-events-auto">
+                    
+                    {/* 地图区域 - 纯净版 */}
+                    <div className="rounded-lg overflow-hidden">
+                      <MapContainer
+                        onMapClick={handleMapClick}
+                        guessLocation={guessLocation}
+                        isMapExpanded={isMapExpanded}
+                        onToggleExpanded={toggleMapExpanded}
+                      />
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      {/* 年份选择器 - 与桌面端一致的样式 */}
+                      <div className="bg-gradient-to-br from-slate-900/80 via-gray-800/70 to-slate-900/80 backdrop-blur-xl rounded-xl p-4 border border-white/20 shadow-xl">
+                        <div className="flex items-center gap-4">
+                          {/* 年份标签和显示 */}
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center shadow-lg border-2 border-blue-400/40">
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <div className="text-lg font-bold text-white">{selectedYear}</div>
+                              <div className="text-xs text-gray-300">Select Year</div>
+                            </div>
+                          </div>
+                          
+                          {/* 滑块区域 */}
+                          <div className="flex-1">
+                            <input
+                              type="range"
+                              min={1900}
+                              max={currentMaxYear}
+                              value={selectedYear}
+                              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                              className="w-full h-2 bg-gray-600/60 rounded-full appearance-none cursor-pointer accent-blue-500 mb-1"
+                              style={{
+                                WebkitAppearance: 'none',
+                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((selectedYear - 1900) / (currentMaxYear - 1900)) * 100}%, #4b5563 ${((selectedYear - 1900) / (currentMaxYear - 1900)) * 100}%, #4b5563 100%)`
+                              }}
+                            />
+                            <div className="flex justify-between text-xs text-gray-300">
+                              <span>1900</span>
+                              <span>{currentMaxYear}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {/* 警告和错误信息 */}
+                    {timeWarning && (
+                      <div className="p-3 bg-red-500/90 text-white rounded-lg text-center text-sm">
+                        ⏰ Time's up! Please submit your answer
+                      </div>
+                    )}
+                    {submitError && (
+                      <div className="p-3 bg-red-100/90 border border-red-300/50 rounded-lg">
+                        <div className="text-red-700 text-center text-sm mb-2">
+                          ❌ {submitError}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleRetrySubmit}
+                            className="flex-1 px-3 py-2 bg-blue-500 text-white rounded text-sm font-medium"
+                          >
+                            🔄 Retry
+                          </button>
+                          <button
+                            onClick={handleSkipQuestion}
+                            className="flex-1 px-3 py-2 bg-gray-500 text-white rounded text-sm font-medium"
+                          >
+                            ⏭️ Skip
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 提交按钮 */}
+                    <div className="pb-4">
+                      <SubmitButton
+                        onSubmit={handleSubmitGuess}
+                        guessLocation={guessLocation}
+                        isMobile={true}
+                        isLoading={isSubmitting}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop layout - 新的两列布局 */}
+          <div className="hidden md:block">
+            {/* 两列布局容器 */}
+            <div className="absolute top-8 left-4 right-4 bottom-4 flex gap-6 z-20 pointer-events-auto">
+              {/* 左列 - 纯图片区域 */}
+              <div className="sm:1/2 md:w-3/5 overflow-hidden" style={{height: 'calc(100vh - 150px)'}}>
                 <GameImage 
                   imageUrl={currentEvent.imageUrl || currentEvent.image_url || ''} 
                   eventName={currentEvent.description || ''}
                 />
-              );
-            })()}
-          </div>
-
-          {/* Mobile info panel */}
-          <MobileInfoPanel
-            eventName={currentEvent.description || ''}
-            currentRound={currentRound}
-            totalRounds={totalRounds}
-            timeRemaining={timeRemaining}
-            guessLocation={guessLocation}
-            selectedYear={selectedYear}
-            onYearChange={handleYearChange}
-            currentYear={currentYear}
-          />
-
-          {/* 桌面端游戏提示 */}
-          <GameHint
-            eventName={currentEvent.description || ''}
-            currentRound={currentRound}
-            totalRounds={totalRounds}
-          />
-
-          {/* Desktop status panel */}
-          <DesktopStatusPanel
-            timeRemaining={timeRemaining}
-            selectedYear={selectedYear}
-            onYearChange={handleYearChange}
-            guessLocation={guessLocation}
-            currentYear={currentYear}
-          />
-
-          {/* Mobile bottom submit button */}
-          <div className="md:hidden absolute bottom-4 left-4 right-4 z-40 pointer-events-auto">
-            {/* Time warning alert */}
-            {timeWarning && (
-              <div className="mb-2 p-3 bg-red-500 text-white rounded-lg text-center font-medium">
-                ⏰ Time's up! Please submit your answer as soon as possible
               </div>
-            )}
-            {/* Submit error handling options */}
-            {submitError && (
-              <div className="mb-2 p-3 bg-red-100 border border-red-300 rounded-lg">
-                <div className="text-red-700 text-center font-medium mb-2">
-                  ❌ {submitError}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleRetrySubmit}
-                    className="flex-1 px-3 py-2 bg-blue-500 text-white rounded font-medium hover:bg-blue-600"
-                  >
-                    🔄 Retry Submit
-                  </button>
-                  <button
-                    onClick={handleSkipQuestion}
-                    className="flex-1 px-3 py-2 bg-gray-500 text-white rounded font-medium hover:bg-gray-600"
-                  >
-                    ⏭️ Skip Question
-                  </button>
-                </div>
-              </div>
-            )}
-            <SubmitButton
-              onSubmit={handleSubmitGuess}
-              guessLocation={guessLocation}
-              isMobile={true}
-              isLoading={isSubmitting}
-            />
-          </div>
 
-          {/* Combined container for map and desktop submit button */}
-          <div className="absolute bottom-20 md:bottom-4 left-4 right-4 z-30 pointer-events-auto">
-            {/* Desktop submit button - positioned above map */}
-            <div className="hidden md:flex flex-col items-center z-50 pointer-events-auto relative -bottom-6">
-              {/* Time warning alert */}
-              {timeWarning && (
-                <div className="mb-2 p-3 bg-red-500 text-white rounded-lg text-center font-medium">
-                  ⏰ Time's up! Please submit your answer as soon as possible
+              {/* 右列 - 交互控制区域 */}
+              <div className="sm:1/2 md:w-2/5 flex flex-col">
+                {/* 游戏提示 */}
+                <div className="mb-3">
+                  <GameHint
+                    eventName={currentEvent.description || ''}
+                    currentRound={currentRound}
+                    totalRounds={totalRounds}
+                  />
                 </div>
-              )}
-              {/* Submit error handling options */}
-              {submitError && (
-                <div className="mb-2 p-3 bg-red-100 border border-red-300 rounded-lg">
-                  <div className="text-red-700 text-center font-medium mb-2">
-                    ❌ {submitError}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleRetrySubmit}
-                      className="flex-1 px-3 py-2 bg-blue-500 text-white rounded font-medium hover:bg-blue-600"
-                    >
-                      🔄 Retry Submit
-                    </button>
-                    <button
-                      onClick={handleSkipQuestion}
-                      className="flex-1 px-3 py-2 bg-gray-500 text-white rounded font-medium hover:bg-gray-600"
-                    >
-                      ⏭️ Skip Question
-                    </button>
+
+                {/* 状态面板 - 时间和位置信息 */}
+                <div className="mb-3">
+                  <DesktopStatusPanel
+                    timeRemaining={timeRemaining}
+                    guessLocation={guessLocation}
+                  />
+                </div>
+
+                {/* 地图区域 - 占据主要空间 */}
+                <div className=" rounded-xl overflow-hidden border-2 border-white/30 shadow-xl bg-black/20 backdrop-blur-sm mb-3">
+                  <MapContainer
+                    onMapClick={handleMapClick}
+                    guessLocation={guessLocation}
+                    isMapExpanded={isMapExpanded}
+                    onToggleExpanded={toggleMapExpanded}
+                  />
+                </div>
+
+                {/* 底部控制区域 - 年份选择和提交 */}
+                <div className="space-y-3 flex-shrink-0">
+                  {/* 年份选择器 */}
+                  <YearSelector
+                    selectedYear={selectedYear}
+                    onYearChange={handleYearChange}
+                    currentYear={currentYear}
+                  />
+                  
+                  {/* 操作区域 */}
+                  <div className="space-y-2">
+                  {/* 警告和错误信息 */}
+                  {timeWarning && (
+                    <div className="p-2.5 bg-red-500/95 backdrop-blur-md text-white rounded-lg text-center font-medium border border-red-300 shadow-lg text-sm">
+                      ⏰ Time's up! Please submit your answer as soon as possible
+                    </div>
+                  )}
+                  {submitError && (
+                    <div className="p-2.5 bg-red-50/95 backdrop-blur-md border border-red-300 rounded-lg shadow-lg">
+                      <div className="text-red-700 text-center font-medium mb-2 text-sm">
+                        ❌ {submitError}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleRetrySubmit}
+                          className="flex-1 px-2.5 py-1.5 bg-blue-500 text-white rounded text-sm font-medium hover:bg-blue-600 transition-all duration-200 shadow-md"
+                        >
+                          🔄 Retry
+                        </button>
+                        <button
+                          onClick={handleSkipQuestion}
+                          className="flex-1 px-2.5 py-1.5 bg-gray-500 text-white rounded text-sm font-medium hover:bg-gray-600 transition-all duration-200 shadow-md"
+                        >
+                          ⏭️ Skip
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 提交按钮 - 突出显示 */}
+                  <SubmitButton
+                    onSubmit={handleSubmitGuess}
+                    guessLocation={guessLocation}
+                    isLoading={isSubmitting}
+                  />
                   </div>
                 </div>
-              )}
-              <SubmitButton
-                onSubmit={handleSubmitGuess}
-                guessLocation={guessLocation}
-                isLoading={isSubmitting}
-              />
+              </div>
             </div>
-            
-            {/* Map container */}
-            <MapContainer
-              onMapClick={handleMapClick}
-              guessLocation={guessLocation}
-              isMapExpanded={isMapExpanded}
-              onToggleExpanded={toggleMapExpanded}
-            />
           </div>
         </div>
       )}

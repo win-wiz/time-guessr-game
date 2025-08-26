@@ -17,10 +17,10 @@ export const SubmitButton = memo(function SubmitButton({
   isLoading = false
 }: SubmitButtonProps) {
   const buttonClass = useMemo(() => {
-    const baseClass = `${isMobile ? 'w-full py-4 rounded-2xl' : 'px-8 py-3 rounded-full'} text-lg font-bold transition-all duration-300 shadow-xl border-2`;
-    const enabledClass = 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 hover:from-blue-500 hover:via-purple-500 hover:to-indigo-600 text-white border-blue-400/50 transform hover:scale-105';
-    const loadingClass = 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white border-blue-400/50 cursor-not-allowed opacity-80';
-    const disabledClass = 'bg-gray-700/60 text-gray-400 border-gray-600/40 cursor-not-allowed';
+    const baseClass = `${isMobile ? 'py-4 rounded-2xl' : 'px-8 py-3 rounded-xl'} w-full text-lg font-bold transition-all duration-300 shadow-2xl border-2 relative overflow-hidden`;
+    const enabledClass = 'bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-600 hover:from-emerald-400 hover:via-blue-400 hover:to-purple-500 text-white border-emerald-400/50 hover:shadow-emerald-500/25 hover:scale-[1.02] active:scale-[0.98]';
+    const loadingClass = 'bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 text-white border-blue-400/50 cursor-not-allowed';
+    const disabledClass = 'bg-slate-700/80 text-slate-400 border-slate-600/50 cursor-not-allowed backdrop-blur-sm';
     
     if (isLoading) {
       return `${baseClass} ${loadingClass}`;
@@ -28,6 +28,12 @@ export const SubmitButton = memo(function SubmitButton({
     
     return `${baseClass} ${guessLocation ? enabledClass : disabledClass}`;
   }, [guessLocation, isMobile, isLoading]);
+
+  const buttonText = useMemo(() => {
+    if (isLoading) return 'Submitting...';
+    if (guessLocation) return '🎯 Submit Guess';
+    return 'Select location first';
+  }, [isLoading, guessLocation]);
 
   return (
     <button
@@ -37,16 +43,16 @@ export const SubmitButton = memo(function SubmitButton({
       tabIndex={0}
       style={{ pointerEvents: 'auto' }}
     >
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-3 relative z-10">
         {isLoading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <Loader2 className="w-6 h-6 animate-spin" />
         ) : (
-          <Zap className="w-5 h-5" />
+          <Zap className={`w-6 h-6 ${guessLocation ? 'animate-pulse' : ''}`} />
         )}
-        {isLoading ? 'Submitting...' : guessLocation ? '🎯 Submit Guess' : 'Please select a location on the map first'}
+        <span className="font-semibold">{buttonText}</span>
       </div>
-      {guessLocation && !isMobile && !isLoading && (
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400/20 via-purple-500/20 to-indigo-600/20 animate-pulse"></div>
+      {guessLocation && !isLoading && (
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 via-blue-400/20 to-purple-500/20 animate-pulse"></div>
       )}
     </button>
   );
