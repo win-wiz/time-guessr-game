@@ -1,0 +1,73 @@
+# Time Guessr Game Project Information
+
+## Project Overview
+Time Guessr is a historical geography guessing game developed with Next.js 15. Players need to guess the year and location of events based on historical photos, receiving score feedback through an intelligent scoring system.
+
+## Core Gameplay
+- View historical event images and descriptions
+- Guess the specific year when the event occurred
+- Mark the event location on Google Maps
+- Receive scores based on time and location accuracy
+- Complete 5 rounds of gameplay and view overall results and leaderboards
+
+## Technology Stack
+- **Frontend Framework**: Next.js 14 (React)
+- **Development Language**: TypeScript
+- **Styling System**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Map Service**: Google Maps API
+- **State Management**: React Hooks
+- **Data Source**: Third-party API integration
+
+## Main Features
+
+### Game System
+- Multi-round game flow (default 5 rounds)
+- Real-time timing system
+- Intelligent hints and clue system
+- Game progress saving and recovery
+- Multiple game modes (timed mode, practice mode, etc.)
+
+### Scoring Mechanism
+- **Time Dimension Scoring**: Based on year guess accuracy, maximum 1000 points
+- **Geographic Location Scoring**: Based on distance accuracy, calculated using Haversine formula
+- **Reward System**: Speed bonus, streak bonus, perfect guess bonus
+- **Level System**: 7-tier scoring system from "Perfect" to "Poor"
+
+### User Experience
+- Responsive design supporting mobile and desktop
+- Dark/light theme switching
+- Detailed result display pages
+- Map visualization comparison (actual location vs guessed location)
+- Achievement system and leaderboards
+
+### Performance Optimization
+- React.memo component optimization
+- useCallback and useMemo caching strategies
+- Component lazy loading
+- API response caching
+- Local storage of game state
+
+## Environment Configuration
+The following environment variables need to be configured:
+- `NEXT_PUBLIC_API_BASE_URL` - Backend API base URL
+- `NEXT_PUBLIC_API_KEY` - API access key
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps API key
+
+## Development Features
+- Complete TypeScript type definitions
+- Detailed error handling and fallback strategies
+- Comprehensive test coverage (unit tests and integration tests)
+- Performance monitoring and optimization
+- Anti-cheating mechanisms
+- Internationalization support preparation
+
+## Game Data
+The game uses historical event data, including:
+- Historical event images
+- Event descriptions and background information
+- Accurate time and geographic location information
+- Difficulty level classification
+- Related historical background knowledge
+
+This project demonstrates modern web game development best practices, combining educational and entertainment value to provide users with an interesting way to learn historical knowledge.
