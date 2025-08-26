@@ -23,7 +23,7 @@ const Footer = memo(({
   companyName = "TimeGuessr Team",
   email = "support@timeguessr.online",
   socialLinks = {
-    github: "https://github.com/timeguessr",
+    github: "https://github.com/win-wiz/time-guessr-game",
     // twitter: "https://twitter.com/timeguessr",
     // linkedin: "https://linkedin.com/company/timeguessr"
   },
