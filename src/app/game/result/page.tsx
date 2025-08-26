@@ -18,7 +18,7 @@ interface GameResult {
   timeLimit?: number;
   isCompleted: boolean;
   completedAt?: string;
-  questionSessions: Array<{
+  questionSessions?: Array<{
     questionSessionId: string;
     eventId: string;
     guessedYear: number;
@@ -27,8 +27,8 @@ interface GameResult {
       lng: number;
     };
     answerTime?: number;
-    finalScore: number;
-    rank: string;
+    finalScore?: number;
+    rank?: string;
   }>;
 }
 
@@ -93,7 +93,30 @@ const GameResultContent = memo(function GameResultContent() {
   const fetchGameResult = useCallback(async (gameSessionId: string): Promise<void> => {
     try {
       const result = await GameAPIService.getGameResult(gameSessionId);
-      setGameResult(result);
+      
+      // Validate and sanitize the result data
+      const sanitizedResult: GameResult = {
+        gameSessionId: result?.gameSessionId || gameSessionId,
+        totalScore: result?.totalScore || 0,
+        averageScore: result?.averageScore || 0,
+        questionsCompleted: result?.questionsCompleted || 0,
+        totalQuestions: result?.totalQuestions || 0,
+        gameMode: result?.gameMode || 'untimed',
+        timeLimit: result?.timeLimit,
+        isCompleted: result?.isCompleted || false,
+        completedAt: result?.completedAt,
+        questionSessions: Array.isArray(result?.questionSessions) ? result.questionSessions.map(session => ({
+          questionSessionId: session?.questionSessionId || '',
+          eventId: session?.eventId || '',
+          guessedYear: session?.guessedYear || 0,
+          guessedLocation: session?.guessedLocation,
+          answerTime: session?.answerTime,
+          finalScore: session?.finalScore || 0,
+          rank: session?.rank || 'N/A'
+        })) : []
+      };
+      
+      setGameResult(sanitizedResult);
     } catch (error) {
       console.error('Error fetching game result:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch game result');
@@ -258,7 +281,8 @@ const GameResultContent = memo(function GameResultContent() {
     return nextRound <= totalRoundsNum;
   }, [urlParams.status, urlParams.currentRound, urlParams.totalRounds, selectedQuestionResult?.questionNumber]);
 
-  if (loading && !selectedQuestionResult) {
+  // Show loading state when data is being fetched
+  if (loading && !selectedQuestionResult && !gameResult) {
     return <LoadingState message="Loading result data..." />;
   }
 
@@ -280,6 +304,24 @@ const GameResultContent = memo(function GameResultContent() {
     );
   }
 
+  // If no data is available at all, show a fallback message
+  if (!loading && !selectedQuestionResult && !gameResult) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <h1 className="text-2xl font-bold mb-4">No Results Available</h1>
+          <p className="mb-4">No game results found. Please start a new game.</p>
+          <button
+            onClick={() => router.push('/game')}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          >
+            Start New Game
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
@@ -290,15 +332,15 @@ const GameResultContent = memo(function GameResultContent() {
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">{gameResult.totalScore}</div>
+                <div className="text-2xl font-bold text-blue-400">{gameResult.totalScore || 0}</div>
                 <div className="text-sm text-gray-300">Total Score</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">{gameResult.averageScore}</div>
+                <div className="text-2xl font-bold text-green-400">{gameResult.averageScore || 0}</div>
                 <div className="text-sm text-gray-300">Average Score</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-400">{gameResult.questionsCompleted}/{gameResult.totalQuestions}</div>
+                <div className="text-2xl font-bold text-purple-400">{gameResult.questionsCompleted || 0}/{gameResult.totalQuestions || 0}</div>
                 <div className="text-sm text-gray-300">Completion</div>
               </div>
               <div className="text-center">
@@ -319,7 +361,7 @@ const GameResultContent = memo(function GameResultContent() {
         )}
 
         {/* All questions summary - only show after game result is loaded */}
-        {gameResult && gameResult.questionSessions.length > 0 && (
+        {gameResult && gameResult.questionSessions && Array.isArray(gameResult.questionSessions) && gameResult.questionSessions.length > 0 && (
           <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-28">
             <h2 className="text-2xl font-bold text-white mb-6">All Questions Summary</h2>
             
@@ -336,8 +378,8 @@ const GameResultContent = memo(function GameResultContent() {
                 >
                   <div className="text-left">
                     <div className="text-white font-semibold mb-2">Question {index + 1}</div>
-                    <div className="text-sm text-gray-300 mb-1">Score: {question.finalScore}</div>
-                    <div className="text-sm text-gray-300 mb-1">Rank: {question.rank}</div>
+                    <div className="text-sm text-gray-300 mb-1">Score: {question.finalScore || 0}</div>
+                    <div className="text-sm text-gray-300 mb-1">Rank: {question.rank || 'N/A'}</div>
                     {question.answerTime && (
                       <div className="text-sm text-gray-300">Time: {question.answerTime}s</div>
                     )}

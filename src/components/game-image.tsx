@@ -15,9 +15,9 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
 
-  console.log('imgUrl ======>>>', imageUrl);
-  console.log('eventName ======>>>', eventName);
-  console.log('GameImage props:', { imageUrl, eventName });
+  // console.log('imgUrl ======>>>', imageUrl);
+  // console.log('eventName ======>>>', eventName);
+  // console.log('GameImage props:', { imageUrl, eventName });
   // Memoize image source and alt text
   const imageSrc = useMemo(() => imageUrl || "/placeholder.svg", [imageUrl])
   const imageAlt = useMemo(() => eventName || "Historical event image", [eventName])
@@ -99,10 +99,10 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
   }, [])
 
   return (
-    <Card className="h-full overflow-hidden bg-gradient-to-br from-slate-900/80 to-slate-800/60 backdrop-blur-md rounded-2xl p-1 border border-white/30 shadow-2xl">
+    <Card className="h-full overflow-hidden bg-transparent rounded-2xl p-1 border border-white/20 shadow-lg">
       <div 
         ref={containerRef}
-        className="relative h-full w-full cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl overflow-hidden bg-black/20"
+        className="relative h-full w-full cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl overflow-hidden bg-transparent"
         style={{ maxHeight: '100%', height: '100%' }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
@@ -122,7 +122,7 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
         {showResetButton && (
           <button
             onClick={resetZoom}
-            className="absolute top-3 right-3 bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-500 hover:to-purple-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg backdrop-blur-sm border border-white/20"
+            className="absolute top-5 right-3 bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-500 hover:to-purple-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg backdrop-blur-sm border border-white/20"
           >
             {/* 翻译成英文 */}
             Reset Zoom
@@ -134,8 +134,8 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
           {zoomHintText}
         </div>
         
-        {/* AI Generated watermark */}
-        <div className="absolute bottom-3 right-3 text-white/50 text-xs font-medium pointer-events-none" style={{ fontSize: '12px' }}>
+        {/* AI Generated watermark - moved to top right to avoid overlap with zoom hint */}
+        <div className="absolute bottom-6 right-3 text-white/70 text-xs font-medium pointer-events-none bg-black/50 px-2 py-1 rounded-md backdrop-blur-sm" style={{ fontSize: '12px' }}>
           AI Generated
         </div>
         

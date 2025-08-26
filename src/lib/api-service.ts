@@ -188,6 +188,7 @@ export interface EventDetail {
   imageUrl?: string;
   image_url?: string;
   difficulty?: string;
+  event_detail?: string;
 }
 
 export interface GameResult {

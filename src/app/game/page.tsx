@@ -14,6 +14,7 @@ import { SubmitButton } from "@/components/game/submit-button";
 import { MapContainer } from "@/components/game/map-container";
 import { GameSummaryPage } from "@/components/game/game-summary-page";
 import { LoadingState } from "@/components/game/loading-state";
+// import { EventDetailPanel } from "@/components/game/event-detail";
 
 // Import unified API service
 import { 
@@ -69,6 +70,7 @@ const Game = React.memo(() => {
   const [isSubmitting, setIsSubmitting] = useState(false); // Submitting state
   const [questionStartTime, setQuestionStartTime] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  // const [isEventDetailExpanded, setIsEventDetailExpanded] = useState(false); // Event detail expansion state
   
   // Game scores (using local storage type)
   const [scores, setScores] = useState<GameScore[]>([]);
@@ -286,7 +288,7 @@ const Game = React.memo(() => {
 
       // Use debounce mechanism to avoid too frequent saves
       GameProgressManager.saveProgress(progress);
-      console.log(`[SaveProgress] Game progress saved successfully: Round ${state.currentRound}, Time remaining: ${state.timeRemaining}s`);
+      // console.log(`[SaveProgress] Game progress saved successfully: Round ${state.currentRound}, Time remaining: ${state.timeRemaining}s`);
       
       // Check storage space
       const storageInfo = checkStorageSpace();
@@ -806,15 +808,15 @@ const Game = React.memo(() => {
         const resumeFlag = urlParams.get('resume');
         const gameSessionIdParam = urlParams.get('gameSessionId');
         const roundParam = urlParams.get('round');
-        const totalRoundsParam = urlParams.get('totalRounds');
+        // const totalRoundsParam = urlParams.get('totalRounds');
         
         // Use round manager to check resume info
         const resumeInfo = loadResumeInfo();
         
-        console.log(`=== GAME PAGE INITIALIZATION ===`);
-        console.log(`Resume flag: ${resumeFlag}`);
-        console.log(`URL params - gameSessionId: ${gameSessionIdParam}, round: ${roundParam}, totalRounds: ${totalRoundsParam}`);
-        console.log(`Resume info:`, resumeInfo);
+        // console.log(`=== GAME PAGE INITIALIZATION ===`);
+        // console.log(`Resume flag: ${resumeFlag}`);
+        // console.log(`URL params - gameSessionId: ${gameSessionIdParam}, round: ${roundParam}, totalRounds: ${totalRoundsParam}`);
+        // console.log(`Resume info:`, resumeInfo);
         
         // If returning from result page, prioritize using resume info
         if (resumeFlag === 'true' && (resumeInfo || (gameSessionIdParam && roundParam))) {
@@ -822,13 +824,13 @@ const Game = React.memo(() => {
           const targetRound = resumeInfo?.nextRound || parseInt(roundParam || '1');
           const targetTotalRounds = resumeInfo?.totalRounds || 5;
           
-          console.log(`=== RESUMING GAME FROM RESULT PAGE ===`);
-          console.log(`Target sessionId: ${targetGameSessionId}, Target round: ${targetRound}, Total rounds: ${targetTotalRounds}`);
+          // console.log(`=== RESUMING GAME FROM RESULT PAGE ===`);
+          // console.log(`Target sessionId: ${targetGameSessionId}, Target round: ${targetRound}, Total rounds: ${targetTotalRounds}`);
           
           // Check if there's matching saved progress
           const savedProgress = GameProgressManager.loadProgress();
           if (savedProgress && savedProgress.gameSessionId === targetGameSessionId) {
-            console.log(`Found matching saved progress, updating round from ${savedProgress.currentRound} to ${targetRound}`);
+            // console.log(`Found matching saved progress, updating round from ${savedProgress.currentRound} to ${targetRound}`);
             
             // Update round info
             const updatedProgress = {
@@ -940,13 +942,13 @@ const Game = React.memo(() => {
       const eventDetail = await retryWithBackoff(async () => {
         return await GameAPIService.getEventDetail(eventId);
       });
-      console.log(`[LoadEvent] Successfully loaded: ${eventDetail.city} (${eventDetail.year})`);
+      // console.log(`[LoadEvent] Successfully loaded: ${eventDetail.city} (${eventDetail.year})`);
       
       // 更新events数组，只在对应位置设置事件
       setEvents(prevEvents => {
         const newEvents = [...prevEvents];
         newEvents[state.currentRound - 1] = eventDetail;
-        console.log(`[LoadEvent] Updated events array at index ${state.currentRound - 1}`);
+        // console.log(`[LoadEvent] Updated events array at index ${state.currentRound - 1}`);
         return newEvents;
       });
       
@@ -961,7 +963,7 @@ const Game = React.memo(() => {
       setTimeRemaining(settings.defaultTimeLimit || 120);
       setIsTimerStopped(false);
       setTimeWarning(false);
-      console.log(`[LoadEvent] Timer reset to ${settings.defaultTimeLimit || 120} seconds for new question`);
+      // console.log(`[LoadEvent] Timer reset to ${settings.defaultTimeLimit || 120} seconds for new question`);
       
       setGameState("guessing");
       setIsLoading(false);
@@ -971,18 +973,18 @@ const Game = React.memo(() => {
         // Use requestIdleCallback for better performance, fallback to shorter timeout
         if (typeof requestIdleCallback !== 'undefined') {
           requestIdleCallback(() => {
-            console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
+            // console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
             saveGameProgress();
           }, { timeout: 1950 });
         } else {
           setTimeout(() => {
-            console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
+            // console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
             saveGameProgress();
           }, 500);
         }
       }
       
-      console.log(`[LoadEvent] Successfully completed loading round ${state.currentRound}`);
+      // console.log(`[LoadEvent] Successfully completed loading round ${state.currentRound}`);
       
     } catch (error) {
       console.error(`[LoadEvent] Failed to load event for round ${state.currentRound} after retries:`, error);
@@ -1002,8 +1004,8 @@ const Game = React.memo(() => {
         if (events[eventIndex]) {
           // 事件已存在，直接使用
           const event = events[eventIndex];
-          console.log(`Using existing event for round ${currentRound}: ${event.city} (${event.year})`);
-          
+          // console.log(`Using existing event for round ${currentRound}: ${event.city} (${event.year})`);
+          console.log('event=========>>>>>', event);
           setCurrentEvent(event);
           setGuessLocation(null);
           setSelectedYear(1950);
@@ -1014,19 +1016,19 @@ const Game = React.memo(() => {
           setTimeRemaining(settings.defaultTimeLimit || 120);
           setIsTimerStopped(false);
           setTimeWarning(false);
-          console.log(`[UseExistingEvent] Timer reset to ${settings.defaultTimeLimit || 120} seconds for existing event`);
+          // console.log(`[UseExistingEvent] Timer reset to ${settings.defaultTimeLimit || 120} seconds for existing event`);
           
           // 延迟保存进度，避免循环依赖
           if (autoSaveEnabled) {
             const timer = setTimeout(() => {
-              console.log('Auto-saving progress after question change');
+              // console.log('Auto-saving progress after question change');
               saveGameProgress();
             }, 1000);
             return () => clearTimeout(timer);
           }
         } else {
           // Event not loaded, force on-demand loading
-          console.log(`Event not loaded for round ${currentRound}, force loading...`);
+          // console.log(`Event not loaded for round ${currentRound}, force loading...`);
           loadEventForCurrentRound();
         }
       }
@@ -1106,11 +1108,22 @@ const Game = React.memo(() => {
 
                 {/* 图片区域 */}
                 <div className="flex-shrink-0 p-3 pointer-events-auto">
-                  <div className="aspect-[4/3] w-full">
+                  <div className="aspect-[4/3] w-full relative">
                     <GameImage 
                       imageUrl={currentEvent.imageUrl || currentEvent.image_url || ''} 
                       eventName={currentEvent.description || ''}
                     />
+                    {/* 移动端详细信息 - 悬浮在图片上 */}
+                    {/* {currentEvent.event_detail && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent p-3">
+                        <EventDetailPanel 
+                          eventDetail={currentEvent.event_detail}
+                          className="text-xs"
+                          maxLines={2}
+                          expandThreshold={100}
+                        />
+                      </div>
+                    )} */}
                   </div>
                 </div>
 
@@ -1212,16 +1225,32 @@ const Game = React.memo(() => {
           <div className="hidden md:block">
             {/* 两列布局容器 */}
             <div className="absolute top-8 left-4 right-4 bottom-4 flex gap-6 z-20 pointer-events-auto">
-              {/* 左列 - 纯图片区域 */}
-              <div className="sm:1/2 md:w-3/5 overflow-hidden" style={{height: 'calc(100vh - 150px)'}}>
-                <GameImage 
-                  imageUrl={currentEvent.imageUrl || currentEvent.image_url || ''} 
-                  eventName={currentEvent.description || ''}
-                />
+              {/* 左列 - 图片和详细信息区域 */}
+              <div className="sm:1/2 md:w-3/5 relative" style={{height: 'calc(100vh - 150px)'}}>
+                {/* 图片区域 */}
+                <div className="h-full overflow-hidden rounded-xl">
+                  <GameImage 
+                    imageUrl={currentEvent.imageUrl || currentEvent.image_url || ''} 
+                    eventName={currentEvent.description || ''}
+                  />
+                </div>
+                
+                {/* 详细信息区域 - 浮动在图片下方 */}
+                {/* {currentEvent.event_detail && (
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <EventDetailPanel 
+                       eventDetail={currentEvent.event_detail}
+                       className="text-sm"
+                       maxLines={3}
+                       expandThreshold={150}
+                     />
+                  </div>
+                )} */}
               </div>
 
               {/* 右列 - 交互控制区域 */}
               <div className="sm:1/2 md:w-2/5 flex flex-col">
+                
                 {/* 游戏提示 */}
                 <div className="mb-3">
                   <GameHint
