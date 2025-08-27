@@ -8,6 +8,7 @@ interface EventDetailResponse {
   data?: {
     id: string;
     description?: string;
+    detail?: string;
     imageUrl?: string;
     difficulty?: string;
   };
@@ -96,6 +97,7 @@ export async function GET(
     const standardizedEvent = {
       id: String(eventData.id || eventId),
       description: eventData.event_name || eventData.event_detail || '',
+      detail: eventData.event_detail || '',
       imageUrl: eventData.image_url || '',
       difficulty: eventData.difficulty || 'medium'
     };

@@ -48,7 +48,7 @@ class APIClient {
     useCache: boolean = false,
     cacheTTL: number = 300000
   ): Promise<APIResponse<T>> {
-    console.log('endpoint =========>>>', endpoint);
+    // console.log('endpoint =========>>>', endpoint);
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}/api${endpoint}`;
     const cacheKey = `${url}_${JSON.stringify(options.body || {})}`;
 
@@ -189,6 +189,7 @@ export interface EventDetail {
   image_url?: string;
   difficulty?: string;
   event_detail?: string;
+  event_descript?: string;
 }
 
 export interface GameResult {

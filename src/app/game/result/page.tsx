@@ -165,7 +165,7 @@ const GameResultContent = memo(function GameResultContent() {
           try {
             const questionResult = await fetchQuestionResult(questionSessionId);
             if (questionResult) {
-              console.log('返回的结果=======>>>>>:', questionResult);
+              // console.log('返回的结果=======>>>>>:', questionResult);
               setCurrentQuestionResult(questionResult);
               setSelectedQuestionResult(questionResult);
             }

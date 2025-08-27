@@ -14,7 +14,7 @@ import { SubmitButton } from "@/components/game/submit-button";
 import { MapContainer } from "@/components/game/map-container";
 import { GameSummaryPage } from "@/components/game/game-summary-page";
 import { LoadingState } from "@/components/game/loading-state";
-// import { EventDetailPanel } from "@/components/game/event-detail";
+import { EventDetailPanel } from "@/components/game/event-detail";
 
 // Import unified API service
 import { 
@@ -91,7 +91,6 @@ const Game = React.memo(() => {
   
   useEffect(() => {
      const handleOnline = () => {
-       console.log('[Network] Connection restored');
        setIsOnline(true);
        // When network is restored, if there's an error state, prompt user to retry
        if (error && error.includes('Network')) {
@@ -108,7 +107,6 @@ const Game = React.memo(() => {
      };
      
      const handleOffline = () => {
-       console.log('[Network] Connection lost');
        setIsOnline(false);
        setError('Network connection lost. Please check your connection.');
      };
@@ -135,10 +133,8 @@ const Game = React.memo(() => {
           throw new Error('Network connection unavailable');
         }
         
-        console.log(`Attempt ${attempt}/${maxRetries}`);
         return await operation();
       } catch (error) {
-        console.error(`Attempt ${attempt} failed:`, error);
         
         if (attempt === maxRetries) {
           // Last retry failed, throw more specific error based on error type
@@ -152,7 +148,6 @@ const Game = React.memo(() => {
         
         // Exponential backoff delay
         const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
-        console.log(`Retrying in ${Math.round(delay)}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -163,22 +158,13 @@ const Game = React.memo(() => {
   const loadGameProgress = useCallback(() => {
     const savedProgress = GameProgressManager.loadProgress();
     if (!savedProgress) {
-      console.log('[LoadProgress] No saved progress found');
       return false;
     }
 
-    console.log('[LoadProgress] Loading saved progress:', {
-      gameSessionId: savedProgress.gameSessionId,
-      currentRound: savedProgress.currentRound,
-      totalRounds: savedProgress.totalRounds,
-      eventIdsLength: savedProgress.eventIds?.length || 0,
-      eventsLength: savedProgress.events?.length || 0,
-      scoresLength: savedProgress.scores?.length || 0
-    });
+
 
     // Validate required data
     if (!savedProgress.gameSessionId || !savedProgress.eventIds || savedProgress.eventIds.length === 0) {
-      console.error('[LoadProgress] Invalid saved progress data, missing required fields');
       GameProgressManager.clearProgress();
       return false;
     }
@@ -197,7 +183,6 @@ const Game = React.memo(() => {
     setIsLoading(false);
     setQuestionStartTime(Date.now());
 
-    console.log('[LoadProgress] Game progress loaded successfully');
     return true;
   }, []);
 
@@ -231,17 +216,7 @@ const Game = React.memo(() => {
       gameState
     };
     
-    // Simplified debug logs
-    if (prevState.currentRound !== newState.currentRound) {
-      console.log(`Round: ${prevState.currentRound} → ${newState.currentRound}`);
-    }
-    if (prevState.gameState !== newState.gameState) {
-      console.log(`State: ${prevState.gameState} → ${newState.gameState}`);
-    }
-    if (prevState.scores.length !== newState.scores.length) {
-      console.log(`[GameStateRef] Scores count: ${prevState.scores.length} → ${newState.scores.length}`);
-      console.log(`[GameStateRef] Total score: ${newState.scores.reduce((sum, s) => sum + s.score, 0)}`);
-    }
+
     
     gameStateRef.current = newState;
   });
@@ -250,23 +225,9 @@ const Game = React.memo(() => {
   const saveGameProgress = useCallback(() => {
     const state = gameStateRef.current;
     
-    console.log('[SaveProgress] Attempting to save game progress:', {
-      gameSessionId: state.gameSessionId,
-      currentRound: state.currentRound,
-      totalRounds: state.totalRounds,
-      gameState: state.gameState,
-      eventIdsLength: state.eventIds?.length || 0,
-      eventsLength: state.events?.length || 0,
-      scoresLength: state.scores?.length || 0
-    });
+
     
     if (!state.gameSessionId || !state.eventIds || state.eventIds.length === 0) {
-      console.warn('[SaveProgress] Missing required data for saving progress:', {
-        hasGameSessionId: !!state.gameSessionId,
-        hasEventIds: !!state.eventIds,
-        eventIdsLength: state.eventIds?.length || 0,
-        gameState: state.gameState
-      });
       return;
     }
 
@@ -288,16 +249,15 @@ const Game = React.memo(() => {
 
       // Use debounce mechanism to avoid too frequent saves
       GameProgressManager.saveProgress(progress);
-      // console.log(`[SaveProgress] Game progress saved successfully: Round ${state.currentRound}, Time remaining: ${state.timeRemaining}s`);
       
       // Check storage space
       const storageInfo = checkStorageSpace();
       if (!storageInfo.hasSpace) {
-        console.warn('[SaveProgress] Storage space is running low');
+        // Storage space is running low
       }
       
     } catch (error) {
-      console.error('[SaveProgress] Failed to save game progress:', error);
+      // Failed to save game progress
     }
   }, []); // Remove all dependencies, use ref to get latest state
 
@@ -310,15 +270,12 @@ const Game = React.memo(() => {
       
       // Check for saved progress - directly check localStorage, not dependent on hasStoredProgress state
       const hasProgress = GameProgressManager.hasProgress();
-      console.log('[GameInit] Checking for saved progress:', hasProgress);
       
       if (hasProgress) {
         const loaded = loadGameProgress();
         if (loaded) {
-          console.log('[GameInit] Successfully loaded saved progress, skipping new game initialization');
           return; // Successfully loaded saved progress
         }
-        console.log('[GameInit] Failed to load saved progress, clearing and starting new game');
         GameProgressManager.clearProgress();
       }
       
@@ -333,7 +290,6 @@ const Game = React.memo(() => {
       }
       
       // 1. Call /game/start to get game session ID, currentRound and game eventIds
-      console.log('[GameInit] Starting new game...');
       const gameResponse = await retryWithBackoff(async () => {
         return await GameAPIService.startGame({
           gameMode: settings.defaultGameMode,
@@ -343,7 +299,6 @@ const Game = React.memo(() => {
       });
 
       const { gameSessionId, eventIds, currentQuestion, totalQuestions, timeLimit } = gameResponse;
-      console.log(`[GameInit] Game started: sessionId=${gameSessionId}, currentRound=${currentQuestion}, totalRounds=${totalQuestions}`);
 
       // Set basic game state
       setGameSessionId(gameSessionId);
@@ -361,7 +316,6 @@ const Game = React.memo(() => {
       }
       
       // 3. Load event details for current round on demand
-      console.log(`[GameInit] Loading event detail for round ${currentQuestion}: ${currentEventId}`);
       
       // First check if the event is in cache
       let currentEventDetail: EventDetail;
@@ -375,9 +329,7 @@ const Game = React.memo(() => {
           throw new Error('Unable to load event details');
         }
         
-        console.log(`[GameInit] Event loaded: ${currentEventDetail.city} (${currentEventDetail.year})`);
       } catch (error) {
-        console.error(`[GameInit] Failed to load event ${currentEventId}:`, error);
         throw new Error(`Failed to load question ${currentQuestion}`);
       }
       
@@ -401,10 +353,7 @@ const Game = React.memo(() => {
         setTimeout(() => saveGameProgress(), 1000);
       }
       
-      console.log(`[GameInit] Game initialization completed for round ${currentQuestion}`);
-      
     } catch (error) {
-      console.error('[GameInit] Initialize game error:', error);
       
       // Provide more specific error messages and handling based on error type
       let errorMessage = 'Game initialization failed';
@@ -464,13 +413,9 @@ const Game = React.memo(() => {
   }, [autoSaveEnabled]); // Remove saveGameProgress dependency
 
   const handleNextRound = useCallback(() => {
-    console.log(`=== HANDLE NEXT ROUND ===`);
-    console.log(`Current round: ${currentRound}, Total rounds: ${totalRounds}`);
-    console.log(`EventIds length: ${eventIds.length}`);
     
     if (currentRound < totalRounds && eventIds.length >= totalRounds) {
       const nextRound = currentRound + 1;
-      console.log(`Advancing to round ${nextRound}`);
       
       // Clear current event to avoid displaying wrong event
       setCurrentEvent(null);
@@ -497,11 +442,9 @@ const Game = React.memo(() => {
       };
       
       GameProgressManager.saveProgress(updatedProgress);
-      console.log(`Progress saved with round ${nextRound}`);
       
     } else {
       // All questions completed, go to summary page
-      console.log('All rounds completed, going to summary');
       setGameState("summary");
       clearSavedProgress();
     }
@@ -515,20 +458,16 @@ const Game = React.memo(() => {
 
   const handleSubmitGuess = useCallback(async () => {
     if (!currentEvent || !guessLocation || !gameSessionId) {
-      console.warn('[SubmitGuess] Missing required data:', { currentEvent: !!currentEvent, guessLocation: !!guessLocation, gameSessionId: !!gameSessionId });
       return;
     }
 
     try {
       // Stop timer
       setIsTimerStopped(true);
-      console.log('[SubmitGuess] Timer stopped due to answer submission');
       
       setIsSubmitting(true);
       clearErrors();
       setTimeWarning(false);
-      
-      console.log(`[SubmitGuess] Submitting answer for round ${currentRound}`);
       
       // Calculate answer time (seconds)
       const answerTime = questionStartTime > 0 ? Math.floor((Date.now() - questionStartTime) / 1000) : 0;
@@ -544,7 +483,7 @@ const Game = React.memo(() => {
         });
       });
 
-      console.log(`[SubmitGuess] Answer submitted: questionSessionId=${submitResponse.questionSessionId}, status=${submitResponse.status}`);
+
 
       // Save questionSessionId
       setQuestionSessionIds(prev => [...prev, submitResponse.questionSessionId]);
@@ -577,14 +516,10 @@ const Game = React.memo(() => {
         // Update scores state
         setScores(prev => {
           const updatedScores = [...prev, newScore];
-          console.log('[ScoreUpdate] Previous scores:', prev);
-          console.log('[ScoreUpdate] New score:', newScore);
-          console.log('[ScoreUpdate] Updated scores array:', updatedScores);
-          console.log('[ScoreUpdate] Total score now:', updatedScores.reduce((sum, s) => sum + s.score, 0));
           return updatedScores;
         });
       } catch (error) {
-        console.error('Failed to fetch question result for immediate score update:', error);
+        // Failed to fetch question result for immediate score update
       }
       
       // Auto-save progress
@@ -597,19 +532,16 @@ const Game = React.memo(() => {
       
       // Check if game is completed
       if (submitResponse.status === 'completed') {
-        console.log('[SubmitGuess] Game completed, navigating to final results');
         // 8. When currentRound equals total game rounds, game ends
         clearSavedProgress();
         
         // Navigate to final result page
         router.push(`/game/result?gameSessionId=${gameSessionId}&questionSessionId=${submitResponse.questionSessionId}&status=${submitResponse.status}&currentRound=${currentRound}`);
       } else {
-        console.log('[SubmitGuess] Round completed, navigating to round results');
         // Navigate to current question result page, user can choose to continue to next question
         router.push(`/game/result?gameSessionId=${gameSessionId}&questionSessionId=${submitResponse.questionSessionId}&status=${submitResponse.status}&currentRound=${currentRound}&totalRounds=${totalRounds}`);
       }
     } catch (error) {
-      console.error('[SubmitGuess] Error submitting guess:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit answer';
       setSubmitError(errorMessage);
       setError(errorMessage);
@@ -631,11 +563,9 @@ const Game = React.memo(() => {
     if (!nextEventId) return;
     
     try {
-      console.log(`[PreloadEvent] Preloading next event: ${nextEventId}`);
       const eventDetail = await GameAPIService.getEventDetail(nextEventId);
-      console.log(`[PreloadEvent] Next event preloaded: ${eventDetail.city}`);
     } catch (error) {
-      console.warn(`[PreloadEvent] Failed to preload next event ${nextEventId}:`, error);
+      // Failed to preload next event
     }
   }, [eventIds, currentRound, totalRounds]);
   
@@ -653,7 +583,6 @@ const Game = React.memo(() => {
 
   // Unified state restoration function
   const restoreGameState = useCallback(async (progress: GameProgress, targetRound?: number) => {
-    console.log('Restoring game state:', { progress, targetRound });
     
     const roundToLoad = targetRound || progress.currentRound;
     
@@ -676,7 +605,6 @@ const Game = React.memo(() => {
       
       if (previousQuestionSessionId && previousRound > progress.scores.length) {
         try {
-          console.log(`Fetching result for previous round ${previousRound}, questionSessionId: ${previousQuestionSessionId}`);
           const questionResult = await GameAPIService.getQuestionResult(previousQuestionSessionId);
           
           // Build new score object
@@ -701,9 +629,8 @@ const Game = React.memo(() => {
           };
           
           updatedScores = [...progress.scores, newScore];
-          console.log('Updated scores with new result:', updatedScores);
         } catch (error) {
-          console.error('Failed to fetch question result for score update:', error);
+          // Failed to fetch question result for score update
         }
       }
     }
@@ -728,7 +655,7 @@ const Game = React.memo(() => {
       }
       
       const eventDetail = await GameAPIService.getEventDetail(eventId);
-      console.log(`Loaded event for round ${roundToLoad}: ${eventDetail.city} (${eventDetail.year})`);
+
       
       // Update current event
       setCurrentEvent(eventDetail);
@@ -741,7 +668,7 @@ const Game = React.memo(() => {
       setTimeRemaining(settings.defaultTimeLimit || 120);
       setIsTimerStopped(false);
       setTimeWarning(false);
-      console.log(`[RestoreGame] Timer reset to ${settings.defaultTimeLimit || 120} seconds for restored question`);
+
       
       setGameState("guessing");
       setIsLoading(false);
@@ -751,7 +678,7 @@ const Game = React.memo(() => {
       GameProgressManager.saveProgress(updatedProgress);
       
     } catch (error) {
-      console.error(`Error loading event for round ${roundToLoad}:`, error);
+
       setError(`Failed to load question ${roundToLoad}`);
       setIsLoading(false);
     }
@@ -794,13 +721,13 @@ const Game = React.memo(() => {
   useEffect(() => {
     const initializePage = async () => {
       try {
-        console.log('[PageInit] Starting page initialization');
+
         
         // Check if force reload is needed
         const forceReload = sessionStorage.getItem('force_reload_game');
         if (forceReload) {
           sessionStorage.removeItem('force_reload_game');
-          console.log('[PageInit] Force reload detected, clearing cache');
+
         }
         
         // First check if returning from result page
@@ -813,10 +740,7 @@ const Game = React.memo(() => {
         // Use round manager to check resume info
         const resumeInfo = loadResumeInfo();
         
-        // console.log(`=== GAME PAGE INITIALIZATION ===`);
-        // console.log(`Resume flag: ${resumeFlag}`);
-        // console.log(`URL params - gameSessionId: ${gameSessionIdParam}, round: ${roundParam}, totalRounds: ${totalRoundsParam}`);
-        // console.log(`Resume info:`, resumeInfo);
+
         
         // If returning from result page, prioritize using resume info
         if (resumeFlag === 'true' && (resumeInfo || (gameSessionIdParam && roundParam))) {
@@ -824,13 +748,12 @@ const Game = React.memo(() => {
           const targetRound = resumeInfo?.nextRound || parseInt(roundParam || '1');
           const targetTotalRounds = resumeInfo?.totalRounds || 5;
           
-          // console.log(`=== RESUMING GAME FROM RESULT PAGE ===`);
-          // console.log(`Target sessionId: ${targetGameSessionId}, Target round: ${targetRound}, Total rounds: ${targetTotalRounds}`);
+
           
           // Check if there's matching saved progress
           const savedProgress = GameProgressManager.loadProgress();
           if (savedProgress && savedProgress.gameSessionId === targetGameSessionId) {
-            // console.log(`Found matching saved progress, updating round from ${savedProgress.currentRound} to ${targetRound}`);
+
             
             // Update round info
             const updatedProgress = {
@@ -843,13 +766,13 @@ const Game = React.memo(() => {
             await restoreGameState(updatedProgress, targetRound);
             return;
           } else {
-            console.log(`No matching saved progress found for gameSessionId: ${targetGameSessionId}`);
+
           }
         }
         
         // 检查本地存储的游戏进度
         const hasProgress = GameProgressManager.hasProgress();
-        console.log('[PageInit] Checking localStorage progress:', hasProgress);
+
         setHasStoredProgress(hasProgress);
         
         // Load player settings
@@ -858,21 +781,21 @@ const Game = React.memo(() => {
         setSelectedYear(1950); // 重置为默认值
         
         if (hasProgress) {
-          console.log('[PageInit] Found saved progress, attempting to restore');
+
           // 直接调用loadGameProgress而不是restoreGameState
           const loaded = loadGameProgress();
           if (!loaded) {
-            console.log('[PageInit] Failed to load progress, initializing new game');
+
             await initializeGame();
           } else {
-            console.log('[PageInit] Successfully restored game from localStorage');
+
           }
         } else {
-          console.log('[PageInit] No saved progress found, initializing new game');
+
           await initializeGame();
         }
       } catch (error) {
-        console.error('[PageInit] Page initialization failed:', error);
+
         setError('Page initialization failed, please refresh and retry');
         setIsLoading(false);
       }
@@ -929,26 +852,26 @@ const Game = React.memo(() => {
   const loadEventForCurrentRound = useCallback(async () => {
     const state = gameStateRef.current;
     if (!state.eventIds.length || state.currentRound <= 0 || state.currentRound > state.eventIds.length) {
-      console.warn(`[LoadEvent] Invalid parameters: currentRound=${state.currentRound}, eventIds.length=${state.eventIds.length}`);
+
       return;
     }
     
     try {
       setIsLoading(true);
       const eventId = state.eventIds[state.currentRound - 1];
-      console.log(`[LoadEvent] Starting load for round ${state.currentRound}, eventId: ${eventId}`);
+
       
       // Use retry mechanism to get event data from API
       const eventDetail = await retryWithBackoff(async () => {
         return await GameAPIService.getEventDetail(eventId);
       });
-      // console.log(`[LoadEvent] Successfully loaded: ${eventDetail.city} (${eventDetail.year})`);
+
       
       // 更新events数组，只在对应位置设置事件
       setEvents(prevEvents => {
         const newEvents = [...prevEvents];
         newEvents[state.currentRound - 1] = eventDetail;
-        // console.log(`[LoadEvent] Updated events array at index ${state.currentRound - 1}`);
+
         return newEvents;
       });
       
@@ -963,7 +886,7 @@ const Game = React.memo(() => {
       setTimeRemaining(settings.defaultTimeLimit || 120);
       setIsTimerStopped(false);
       setTimeWarning(false);
-      // console.log(`[LoadEvent] Timer reset to ${settings.defaultTimeLimit || 120} seconds for new question`);
+
       
       setGameState("guessing");
       setIsLoading(false);
@@ -973,21 +896,21 @@ const Game = React.memo(() => {
         // Use requestIdleCallback for better performance, fallback to shorter timeout
         if (typeof requestIdleCallback !== 'undefined') {
           requestIdleCallback(() => {
-            // console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
+
             saveGameProgress();
           }, { timeout: 1950 });
         } else {
           setTimeout(() => {
-            // console.log(`[LoadEvent] Auto-saving progress after loading round ${state.currentRound}`);
+
             saveGameProgress();
           }, 500);
         }
       }
       
-      // console.log(`[LoadEvent] Successfully completed loading round ${state.currentRound}`);
+
       
     } catch (error) {
-      console.error(`[LoadEvent] Failed to load event for round ${state.currentRound} after retries:`, error);
+
       setError(`Failed to load question ${state.currentRound}, please check network connection and retry`);
       setIsLoading(false);
     }
@@ -1004,8 +927,8 @@ const Game = React.memo(() => {
         if (events[eventIndex]) {
           // 事件已存在，直接使用
           const event = events[eventIndex];
-          // console.log(`Using existing event for round ${currentRound}: ${event.city} (${event.year})`);
-          console.log('event=========>>>>>', event);
+
+
           setCurrentEvent(event);
           setGuessLocation(null);
           setSelectedYear(1950);
@@ -1016,19 +939,19 @@ const Game = React.memo(() => {
           setTimeRemaining(settings.defaultTimeLimit || 120);
           setIsTimerStopped(false);
           setTimeWarning(false);
-          // console.log(`[UseExistingEvent] Timer reset to ${settings.defaultTimeLimit || 120} seconds for existing event`);
+
           
           // 延迟保存进度，避免循环依赖
           if (autoSaveEnabled) {
             const timer = setTimeout(() => {
-              // console.log('Auto-saving progress after question change');
+
               saveGameProgress();
             }, 1000);
             return () => clearTimeout(timer);
           }
         } else {
           // Event not loaded, force on-demand loading
-          // console.log(`Event not loaded for round ${currentRound}, force loading...`);
+
           loadEventForCurrentRound();
         }
       }
@@ -1114,21 +1037,21 @@ const Game = React.memo(() => {
                       eventName={currentEvent.description || ''}
                     />
                     {/* 移动端详细信息 - 悬浮在图片上 */}
-                    {/* {currentEvent.event_detail && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent p-3">
+                    {currentEvent.event_descript && (
+                      <div className="absolute -bottom-28 left-0 right-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent p-3">
                         <EventDetailPanel 
-                          eventDetail={currentEvent.event_detail}
+                          eventDetail={currentEvent.event_descript}
                           className="text-xs"
-                          maxLines={2}
+                          maxLines={3}
                           expandThreshold={100}
                         />
                       </div>
-                    )} */}
+                    )}
                   </div>
                 </div>
 
                 {/* 控制区域 */}
-                <div className="flex-1 bg-slate-900/95 backdrop-blur-sm pointer-events-auto">
+                <div className="flex-1 bg-slate-900/95 backdrop-blur-sm pointer-events-auto mt-28">
                     
                     {/* 地图区域 - 纯净版 */}
                     <div className="rounded-lg overflow-hidden">
@@ -1226,7 +1149,7 @@ const Game = React.memo(() => {
             {/* 两列布局容器 */}
             <div className="absolute top-8 left-4 right-4 bottom-4 flex gap-6 z-20 pointer-events-auto">
               {/* 左列 - 图片和详细信息区域 */}
-              <div className="sm:1/2 md:w-3/5 relative" style={{height: 'calc(100vh - 150px)'}}>
+              <div className="sm:1/2 md:w-3/5 relative" style={{height: 'calc(100vh - 250px)'}}>
                 {/* 图片区域 */}
                 <div className="h-full overflow-hidden rounded-xl">
                   <GameImage 
@@ -1236,16 +1159,16 @@ const Game = React.memo(() => {
                 </div>
                 
                 {/* 详细信息区域 - 浮动在图片下方 */}
-                {/* {currentEvent.event_detail && (
-                  <div className="absolute bottom-4 left-4 right-4">
+                {currentEvent.event_descript && (
+                  <div className="absolute -bottom-14 left-2 right-2">
                     <EventDetailPanel 
-                       eventDetail={currentEvent.event_detail}
+                       eventDetail={currentEvent.event_descript}
                        className="text-sm"
-                       maxLines={3}
+                       maxLines={2}
                        expandThreshold={150}
                      />
                   </div>
-                )} */}
+                )}
               </div>
 
               {/* 右列 - 交互控制区域 */}

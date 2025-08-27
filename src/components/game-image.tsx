@@ -9,7 +9,7 @@ interface GameImageProps {
 }
 
 export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameImageProps) {
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(1.5)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
@@ -99,7 +99,7 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
   }, [])
 
   return (
-    <Card className="h-full overflow-hidden bg-transparent rounded-2xl p-1 border border-white/20 shadow-lg">
+    <Card className="h-full overflow-hidden bg-transparent rounded-2xl p-1 border-none">
       <div 
         ref={containerRef}
         className="relative h-full w-full cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl overflow-hidden bg-transparent"
@@ -113,7 +113,7 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
         <img
           src={imageSrc}
           alt={imageAlt}
-          className="transition-all duration-300 ease-out h-full w-full object-cover image-enhanced"
+          className="transition-all duration-300 ease-out h-full w-full image-enhanced object-contain"
           style={transformStyle}
           draggable={false}
         />
@@ -130,12 +130,12 @@ export const GameImage = memo(function GameImage({ imageUrl, eventName }: GameIm
         )}
         
         {/* Zoom hint */}
-        <div className="absolute bottom-3 left-3 bg-gradient-to-r from-slate-900/90 to-slate-800/90 text-white px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-sm border border-white/20 shadow-lg">
+        <div className="absolute bottom-10 md:bottom-16 left-3 bg-gradient-to-r from-slate-900/90 to-slate-800/90 text-white px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-sm border border-white/20 shadow-lg">
           {zoomHintText}
         </div>
         
         {/* AI Generated watermark - moved to top right to avoid overlap with zoom hint */}
-        <div className="absolute bottom-6 right-3 text-white/70 text-xs font-medium pointer-events-none bg-black/50 px-2 py-1 rounded-md backdrop-blur-sm" style={{ fontSize: '12px' }}>
+        <div className="absolute bottom-10 md:bottom-16 right-3 text-white/70 text-xs font-medium pointer-events-none bg-black/50 px-2 py-1 rounded-md backdrop-blur-sm" style={{ fontSize: '12px' }}>
           AI Generated
         </div>
         

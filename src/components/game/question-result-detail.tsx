@@ -36,6 +36,16 @@ const ACHIEVEMENT_ICONS = {
   default: '🏆',
 } as const;
 
+// Common style classes for better performance
+const COMMON_STYLES = {
+  statCard: 'backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center transition-all duration-200',
+  statCardHover: 'hover:bg-opacity-30',
+  statLabel: 'text-[10px] sm:text-xs mb-1',
+  statValue: 'text-xs sm:text-sm font-bold text-white',
+  overlayPanel: 'absolute bg-black/70 backdrop-blur-sm rounded-lg border border-white/20 shadow-lg',
+  gradientButton: 'w-full sm:w-auto px-8 py-4 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center gap-3 group focus:outline-none focus:ring-2 focus:ring-opacity-50'
+} as const;
+
 // Calculate distance between two points (in kilometers) - moved outside component
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
   const R = 6371; // Earth radius in kilometers
@@ -208,7 +218,6 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
       await new Promise(resolve => setTimeout(resolve, 300));
       router.push('/game');
     } catch (error) {
-      console.error('Error restarting game:', error);
       setIsRestarting(false);
       setRestartProgress(0);
       alert('Error restarting game. Please try again.');
@@ -218,13 +227,27 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
   // Optimized state management - memoized calculations
   const eventDetails = useMemo(() => questionResult.event || null, [questionResult.event]);
 
-  // Calculate distance - cached with useMemo
-  const distance = useMemo(() => calculateDistance(
+  // Memoize distance calculation to avoid recalculation on every render
+  const distanceValue = useMemo(() => calculateDistance(
     questionResult.guessedLocation.lat,
     questionResult.guessedLocation.lng,
     questionResult.actualLocation.lat,
     questionResult.actualLocation.lng
   ), [questionResult.guessedLocation, questionResult.actualLocation]);
+
+  // Memoize formatted distance strings to avoid string operations on every render
+  const formattedDistance = useMemo(() => ({
+    rounded: distanceValue.toFixed(0),
+    precise: distanceValue.toFixed(1)
+  }), [distanceValue]);
+
+  // Memoize distance percentage for progress bar
+  const distancePercentage = useMemo(() => 
+    Math.min((distanceValue / 1000) * 100, 100),
+    [distanceValue]
+  );
+
+
 
   // Cache year difference calculation
   const yearDifference = useMemo(() => 
@@ -235,20 +258,42 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
   // Cache rank color calculation
   const rankColorClass = useMemo(() => getRankColor(questionResult.scoringDetails.rank), [questionResult.scoringDetails.rank]);
 
-  // Generate share data for ShareDialog
-  const shareData = useMemo(() => {
-    const eventName = eventDetails?.event_name || 'Historical Event';
-    const city = eventDetails?.city || 'Unknown Location';
-    const achievements = questionResult.scoringDetails.achievements.length > 0 
+  // Memoize event display values to avoid repeated string operations
+  const eventDisplayValues = useMemo(() => ({
+    eventName: eventDetails?.event_name || 'Historical Event',
+    city: eventDetails?.city || 'Unknown Location',
+    achievements: questionResult.scoringDetails.achievements.length > 0 
       ? questionResult.scoringDetails.achievements.slice(0, 2).join(', ') 
-      : 'Great performance';
-    
-    return {
-      title: `Time Guessr Game - Question ${questionResult.questionNumber} Result`,
-      description: `I scored ${questionResult.scoringDetails.finalScore} points (Rank ${questionResult.scoringDetails.rank}) guessing "${eventName}" in ${city}! Year accuracy: ±${yearDifference} years, Distance: ${distance.toFixed(1)}km. ${achievements}!`,
-      hashtags: ['TimeGuessr', 'HistoryGame', 'Gaming', `Rank${questionResult.scoringDetails.rank}`]
-    };
-  }, [eventDetails, questionResult, yearDifference, distance]);
+      : 'Great performance'
+  }), [eventDetails, questionResult.scoringDetails.achievements]);
+
+  // Generate share data for ShareDialog
+  const shareData = useMemo(() => ({
+    title: `Time Guessr Game - Question ${questionResult.questionNumber} Result`,
+    description: `I scored ${questionResult.scoringDetails.finalScore} points (Rank ${questionResult.scoringDetails.rank}) guessing "${eventDisplayValues.eventName}" in ${eventDisplayValues.city}! Year accuracy: ±${yearDifference} years, Distance: ${formattedDistance.precise}km. ${eventDisplayValues.achievements}!`,
+    hashtags: ['TimeGuessr', 'HistoryGame', 'Gaming', `Rank${questionResult.scoringDetails.rank}`]
+  }), [questionResult, eventDisplayValues, yearDifference, formattedDistance.precise]);
+
+  // Memoize conditional rendering flags
+  const shouldShowEventInfo = useMemo(() => 
+    Boolean(eventDetails?.event_detail || eventDetails?.description || eventDetails?.city),
+    [eventDetails]
+  );
+
+  // Memoize next question handler to prevent recreation on every render
+  const handleNextQuestion = useCallback(() => {
+    if (onNextQuestion) {
+      onNextQuestion();
+    } else {
+      // Fallback: Use page navigation if no callback provided
+      window.location.href = '/game';
+    }
+  }, [onNextQuestion]);
+
+  // Memoize restart confirmation handler
+  const handleShowRestartConfirm = useCallback(() => {
+    setShowRestartConfirm(true);
+  }, []);
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white rounded-2xl overflow-hidden shadow-2xl mb-52 md:mb-20">
@@ -270,7 +315,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                </div>
                
                {/* Right side: Score card - responsive */}
-               <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-5 border border-yellow-500/30 flex-shrink-0 min-w-0">
+               <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-5 border border-yellow-500/30 flex-shrink-0 min-w-0 sm:w-[280px] md:w-[380px]">
                  <div className="flex items-center justify-around md:justify-center gap-6 sm:gap-8 md:gap-12">
                    <div className="text-center flex-1">
                      <div className="text-sm text-gray-400 mb-1">Final Score</div>
@@ -292,21 +337,21 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
           
           {/* Quick stats bar - responsive grid */}
            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-3">
-             <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-blue-500/30 transition-all duration-200 hover:bg-blue-500/30">
-               <div className="text-[10px] sm:text-xs text-blue-300 mb-1">Answer Time</div>
-               <div className="text-xs sm:text-sm font-bold text-white">{questionResult.answerTime}s</div>
+             <div className={`${COMMON_STYLES.statCard} bg-blue-500/20 border border-blue-500/30 ${COMMON_STYLES.statCardHover}`}>
+               <div className={`${COMMON_STYLES.statLabel} text-blue-300`}>Answer Time</div>
+               <div className={COMMON_STYLES.statValue}>{questionResult.answerTime}s</div>
              </div>
-             <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-purple-500/30 transition-all duration-200 hover:bg-purple-500/30">
-               <div className="text-[10px] sm:text-xs text-purple-300 mb-1">Year Error</div>
-               <div className="text-xs sm:text-sm font-bold text-white">±{yearDifference}</div>
+             <div className={`${COMMON_STYLES.statCard} bg-purple-500/20 border border-purple-500/30 ${COMMON_STYLES.statCardHover}`}>
+               <div className={`${COMMON_STYLES.statLabel} text-purple-300`}>Year Error</div>
+               <div className={COMMON_STYLES.statValue}>±{yearDifference}</div>
              </div>
-             <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-green-500/30 transition-all duration-200 hover:bg-green-500/30">
-               <div className="text-[10px] sm:text-xs text-green-300 mb-1">Distance</div>
-               <div className="text-xs sm:text-sm font-bold text-white">{distance.toFixed(0)}km</div>
+             <div className={`${COMMON_STYLES.statCard} bg-green-500/20 border border-green-500/30 ${COMMON_STYLES.statCardHover}`}>
+               <div className={`${COMMON_STYLES.statLabel} text-green-300`}>Distance</div>
+               <div className={COMMON_STYLES.statValue}>{formattedDistance.rounded}km</div>
              </div>
-             <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-yellow-500/30 transition-all duration-200 hover:bg-yellow-500/30">
-               <div className="text-[10px] sm:text-xs text-yellow-300 mb-1">Streak</div>
-               <div className="text-xs sm:text-sm font-bold text-white">{questionResult.scoringDetails.streak}</div>
+             <div className={`${COMMON_STYLES.statCard} bg-yellow-500/20 border border-yellow-500/30 ${COMMON_STYLES.statCardHover}`}>
+               <div className={`${COMMON_STYLES.statLabel} text-yellow-300`}>Streak</div>
+               <div className={COMMON_STYLES.statValue}>{questionResult.scoringDetails.streak}</div>
              </div>
            </div>
         </div>
@@ -332,8 +377,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                 )}
                 
                 {/* Floating information card */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  <div className="space-y-2">
+                <div className="absolute -bottom-2 md:bottom-2 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                  <div className="space-x-4 flex">
                     <div className="flex items-center gap-3">
                       <Calendar className="w-6 h-6 text-yellow-400 animate-pulse" />
                       <span className="text-xl font-bold text-yellow-400">{questionResult.actualYear}</span>
@@ -341,7 +386,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                     </div>
                     <div className="flex items-center gap-3">
                       <MapPin className="w-6 h-6 text-red-400" />
-                      <span className="text-lg font-semibold text-white">{eventDetails?.city || "Unknown Location"}</span>
+                      <span className="text-lg font-semibold text-white">{eventDisplayValues.city}</span>
                     </div>
                   </div>
                 </div>
@@ -359,14 +404,14 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                 />
                 
                 {/* Optimized compact city information panel - top left */}
-                <div className={`absolute top-2 sm:top-3 left-2 sm:left-3 bg-black/70 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-white/20 shadow-lg ${ANIMATION_CLASSES.scaleIn} max-w-[150px] sm:max-w-[200px]`}>
+                <div className={`${COMMON_STYLES.overlayPanel} top-2 sm:top-3 left-2 sm:left-3 px-2 sm:px-3 py-1.5 sm:py-2 ${ANIMATION_CLASSES.scaleIn} max-w-[150px] sm:max-w-[200px]`}>
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <div className="w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 rounded-full flex items-center justify-center">
                       <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs sm:text-sm font-semibold text-white truncate">
-                        {eventDetails?.city || "Historical Location"}
+                        {eventDisplayValues.city}
                       </div>
                     </div>
                   </div>
@@ -396,20 +441,20 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                     </div>
                     <div className="flex-1">
                       <div className="text-[10px] sm:text-xs text-blue-100">Distance Error</div>
-                      <div className="text-sm sm:text-lg font-bold text-white">{distance.toFixed(1)} km</div>
+                      <div className="text-sm sm:text-lg font-bold text-white">{formattedDistance.precise} km</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Simplified distance visualization bar - moved to bottom left to avoid Google logo overlap */}
-                <div className={`absolute bottom-12 sm:bottom-14 left-2 sm:left-3 bg-black/70 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1.5 sm:py-2 border border-white/20 ${ANIMATION_CLASSES.bounceIn}`}>
+                <div className={`${COMMON_STYLES.overlayPanel} bottom-12 sm:bottom-14 left-2 sm:left-3 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 ${ANIMATION_CLASSES.bounceIn}`}>
                   <div className="flex items-center gap-2 sm:gap-3 min-w-[140px] sm:min-w-[180px]">
                     <span className="text-[10px] sm:text-xs text-gray-300 whitespace-nowrap">Precise</span>
                     <div className="flex-1 bg-gray-600/80 rounded-full h-1.5 sm:h-2">
                       <div 
                         className="bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 h-1.5 sm:h-2 rounded-full transition-all duration-1000"
                         style={{ 
-                          width: `${Math.min((distance / 1000) * 100, 100)}%` 
+                          width: `${distancePercentage}%` 
                         }}
                       ></div>
                     </div>
@@ -422,7 +467,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
         </div>
 
         {/* Event Information Display Area - Located below image and map */}
-        {(eventDetails?.event_detail || eventDetails?.description || eventDetails?.city) && (
+        {shouldShowEventInfo && (
           <div className={`mb-8 ${ANIMATION_CLASSES.fadeInUp}`}>
             <div className="bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-cyan-600/20 rounded-2xl p-6 border border-emerald-500/30">
               <div className="flex items-center gap-4 mb-4">
@@ -431,7 +476,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                 </div>
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                    {eventDetails.event_name}
+                    {eventDisplayValues.eventName}
                   </h3>
                   <div className="flex items-center gap-4 text-sm text-gray-300 mt-1">
                     <span className="flex items-center gap-1">
@@ -450,7 +495,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
                     Event Description
                   </h4>
                   <p className="text-gray-200 leading-relaxed">
-                    {eventDetails.event_descript || eventDetails.description}
+                    {eventDetails.event_detail || eventDetails.description}
                   </p>
                 </div>
               )}
@@ -479,7 +524,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-400">{questionResult.scoringDetails.locationScore}</div>
                 <div className="text-sm text-gray-400">Location Score</div>
-                <div className="text-xs text-gray-500 mt-1">Error {distance.toFixed(0)}km</div>
+                <div className="text-xs text-gray-500 mt-1">Error {formattedDistance.rounded}km</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-400">{questionResult.scoringDetails.bonusScore}</div>
@@ -503,19 +548,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
             {/* Next Question Button - Display based on hasNextQuestion parameter */}
             {hasNextQuestion && (
               <button 
-                onClick={() => {
-                  if (onNextQuestion) {
-                    onNextQuestion();
-                  } else {
-                    // Fallback: Use page navigation if no callback provided
-                    window.location.href = '/game';
-                  }
-                }}
-                className="action-button w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 
-                         hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-xl 
-                         transition-all duration-300 transform hover:scale-105 hover:shadow-xl 
-                         hover:shadow-blue-500/25 flex items-center justify-center gap-3 group
-                         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
+                onClick={handleNextQuestion}
+                className={`action-button ${COMMON_STYLES.gradientButton} bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/25 focus:ring-blue-400`}
               >
                 <span className="text-lg">➡️</span>
                 <span>Next Question</span>
@@ -525,12 +559,8 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
 
             {/* Restart Button */}
             <button 
-              onClick={() => setShowRestartConfirm(true)}
-              className="action-button w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-500 to-purple-600 
-                       hover:from-purple-600 hover:to-purple-700 text-white font-bold rounded-xl 
-                       transition-all duration-300 transform hover:scale-105 hover:shadow-xl 
-                       hover:shadow-purple-500/25 flex items-center justify-center gap-3 group
-                       focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50"
+              onClick={handleShowRestartConfirm}
+              className={`action-button ${COMMON_STYLES.gradientButton} bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:shadow-purple-500/25 focus:ring-purple-400`}
             >
               <span className="text-lg">🔄</span>
               <span>Restart</span>
@@ -539,11 +569,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
 
             {/* Share Results Button */}
             <ShareDialog shareData={shareData}>
-              <button className="action-button w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 
-                       hover:from-green-600 hover:to-green-700 text-white font-bold rounded-xl 
-                       transition-all duration-300 transform hover:scale-105 hover:shadow-xl 
-                       hover:shadow-green-500/25 flex items-center justify-center gap-3 group
-                       focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50">
+              <button className={`action-button ${COMMON_STYLES.gradientButton} bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 hover:shadow-green-500/25 focus:ring-green-400`}>
                 <Share2 className="w-5 h-5" />
                 <span>Share Results</span>
                 <div className="w-2 h-2 bg-white/30 rounded-full group-hover:animate-bounce"></div>
@@ -554,11 +580,7 @@ export const QuestionResultDetail = memo<QuestionResultDetailProps>(function Que
             {onClose && (
               <button 
                 onClick={onClose}
-                className="action-button w-full sm:w-auto px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 
-                         hover:from-gray-700 hover:to-gray-800 text-white font-bold rounded-xl 
-                         transition-all duration-300 transform hover:scale-105 hover:shadow-xl 
-                         hover:shadow-gray-500/25 flex items-center justify-center gap-3 group
-                         focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50"
+                className={`action-button ${COMMON_STYLES.gradientButton} px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 hover:shadow-gray-500/25 focus:ring-gray-400`}
               >
                 <span className="text-lg">✕</span>
                 <span>Close</span>

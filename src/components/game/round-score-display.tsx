@@ -25,13 +25,13 @@ export const RoundScoreDisplay = memo(function RoundScoreDisplay({
   const totalScore = scores.reduce((sum, round) => sum + round.score, 0);
   
   // 添加调试日志
-  console.log('[RoundScoreDisplay] Rendering with:', {
-    currentRound,
-    totalRounds,
-    scoresCount: scores.length,
-    scores: scores.map(s => ({ score: s.score, yearDiff: s.yearDifference })),
-    totalScore
-  });
+  // console.log('[RoundScoreDisplay] Rendering with:', {
+  //   currentRound,
+  //   totalRounds,
+  //   scoresCount: scores.length,
+  //   scores: scores.map(s => ({ score: s.score, yearDiff: s.yearDifference })),
+  //   totalScore
+  // });
   
   // 计算进度百分比
   const progressValue = totalRounds > 0 ? (currentRound / totalRounds) * 100 : 0;
