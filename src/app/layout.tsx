@@ -2,6 +2,7 @@ import type React from "react";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { UseGoogleAnalysic } from "@/components/use-google-analysic";
 
 export const metadata: Metadata = {
   title: "TimeGuessr - Play Geography Game Online | Street View Quiz",
@@ -54,6 +55,7 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+        <UseGoogleAnalysic />
       </body>
     </html>
   );

@@ -45,7 +45,7 @@ const HeroSection = memo(() => {
               <span className="font-bold text-sm">AI POWERED</span>
             </div>
             <span className="text-xl font-medium text-gray-700 dark:text-blue-200">
-              Intelligent Algorithm-Driven Global Street View Guessing Game
+              AI-Driven Global Street View Guessing Game
             </span>
             <Sparkles className="h-5 w-5 text-[#CF142B] animate-pulse" />
           </div>
