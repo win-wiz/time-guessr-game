@@ -17,6 +17,11 @@ export interface FooterProps {
     label: string;
     external?: boolean;
   }>;
+  friendLinks?: Array<{
+    href: string;
+    label: string;
+    external?: boolean;
+  }>;
 }
 
 const Footer = memo(({ 
@@ -28,7 +33,28 @@ const Footer = memo(({
     // linkedin: "https://linkedin.com/company/timeguessr"
   },
   showSocialLinks = true,
-  customLinks = []
+  customLinks = [],
+  friendLinks = [
+    // { href: "https://nextjs.org", label: "Next.js", external: true },
+    // { href: "https://tailwindcss.com", label: "Tailwind CSS", external: true },
+    // { href: "https://ui.shadcn.com", label: "shadcn/ui", external: true }
+    {
+      href: 'https://newsinsimple.com/',
+      label: 'NewsInSimple',
+      external: true
+    },
+    {
+      href: 'https://wordless.online',
+      label: 'Wordless',
+      external: true
+    },
+    {
+      href: 'https://emojis.click',
+      label: 'EmojiClick',
+      external: true
+    },
+  
+  ]
 }: FooterProps) => {
   const currentYear = new Date().getFullYear();
 
@@ -36,7 +62,7 @@ const Footer = memo(({
     <footer className="bg-white text-[#00205B] border-t border-gray-200 dark:bg-[#00205B] dark:text-white dark:border-[#001845]">
       <div className="container mx-auto px-4 py-8">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
@@ -155,6 +181,34 @@ const Footer = memo(({
                   Contact Us
                 </Link>
               </li> */}
+            </ul>
+          </div>
+
+          {/* Friends */}
+          <div>
+            <h3 className="font-semibold mb-4 text-gray-900 dark:text-white">Friends</h3>
+            <ul className="space-y-2 text-sm">
+              {friendLinks.map((link, index) => (
+                <li key={index}>
+                  {link.external ? (
+                    <a 
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-600 dark:text-blue-200 hover:text-[#CF142B] transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link 
+                      href={link.href}
+                      className="text-gray-600 dark:text-blue-200 hover:text-[#CF142B] transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
 

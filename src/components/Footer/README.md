@@ -50,6 +50,7 @@ import Footer from '@/components/Footer';
 | `socialLinks` | `object` | 见下方 | 社交媒体链接配置 |
 | `showSocialLinks` | `boolean` | `true` | 是否显示社交媒体链接 |
 | `customLinks` | `array` | `[]` | 自定义链接列表 |
+| `friendLinks` | `array` | `[...]` | 友情链接列表 |
 
 ### socialLinks 对象结构
 
