@@ -29,7 +29,7 @@ export default function EnvTest() {
         <ul className="list-disc list-inside space-y-1">
           <li>NEXT_PUBLIC_ 前缀的环境变量可以在客户端访问</li>
           <li>环境变量在构建时被注入，修改后需要重启开发服务器</li>
-          <li>优先级: .env.local > .env.development > .env</li>
+          <li>优先级: .env.local &gt; .env.development &gt; .env</li>
         </ul>
       </div>
     </div>
