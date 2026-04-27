@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     creator: "@TimeGuessr",
   },
   category: "games",
+  other: {
+    "google-adsense-account": "ca-pub-1939625526338391"
+  }
 };
 
 export const viewport: Viewport = {
