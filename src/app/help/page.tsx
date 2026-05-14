@@ -93,12 +93,22 @@ export default function HelpCenter() {
             
             <div className="border-b border-gray-200 dark:border-[#001845] pb-4">
               <h3 className="text-xl font-semibold mb-2">Can I play on mobile devices?</h3>
-              <p className="text-gray-700 dark:text-blue-100">Yes! TimeGuessr is fully responsive and works great on smartphones and tablets.</p>
+              <p className="text-gray-700 dark:text-blue-100">Yes! TimeGuessr is fully responsive and works great on smartphones and tablets. We have optimized the map interactions and image viewing for touch screens.</p>
             </div>
             
             <div className="border-b border-gray-200 dark:border-[#001845] pb-4">
-              <h3 className="text-xl font-semibold mb-2">How do I improve my geography skills?</h3>
-              <p className="text-gray-700 dark:text-blue-100">Practice regularly, study different regions, and pay attention to architectural styles, vegetation, and cultural clues in the street view images.</p>
+              <h3 className="text-xl font-semibold mb-2">How do I improve my geography and history skills?</h3>
+              <p className="text-gray-700 dark:text-blue-100">Practice is key! Pay attention to the details: what side of the road are cars driving on? What language is on the signs? Does the architecture look colonial or modern? Are the photos in black and white or color? Over time, you will develop an intuition for identifying regions and eras.</p>
+            </div>
+            
+            <div className="border-b border-gray-200 dark:border-[#001845] pb-4">
+              <h3 className="text-xl font-semibold mb-2">Why was my location guess scored low even though I got the country right?</h3>
+              <p className="text-gray-700 dark:text-blue-100">Our scoring algorithm calculates the exact distance in kilometers from your dropped pin to the actual coordinate of the image. For large countries like Russia, Canada, or the US, guessing the right country but the wrong coast can still mean you are thousands of kilometers off, resulting in a lower score.</p>
+            </div>
+            
+            <div className="border-b border-gray-200 dark:border-[#001845] pb-4">
+              <h3 className="text-xl font-semibold mb-2">How do you source the historical images?</h3>
+              <p className="text-gray-700 dark:text-blue-100">We source our images from public domain archives, licensed historical databases, and AI-curated collections. Every image undergoes a verification process to ensure the location and year data are as accurate as possible.</p>
             </div>
           </div>
         </div>

@@ -51,9 +51,11 @@ const HeroSection = memo(() => {
           </div>
           
           <p className="text-xl md:text-2xl mb-8 text-gray-600 dark:text-blue-200 leading-relaxed">
-            Test your knowledge of global locations through an immersive time-based street view guessing game. 
-            Explore authentic locations from around the world, analyze visual clues, and compete with players worldwide 
-            in this engaging geography adventure that challenges your speed and accuracy.
+            TimeGuessr is an innovative and educational geography game that tests your knowledge of the world.
+            Unlike traditional map games, we drop you into real street-level scenes from diverse global locations, 
+            challenging you to figure out where you are—and when the photo was taken! 
+            Analyze architectural styles, landscape features, vehicle models, and historical context to make the most accurate guess. 
+            Whether you're a geography nerd, a history buff, or just looking for a fun brain teaser, TimeGuessr offers an engaging way to explore the world across space and time.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mb-12">
             {FEATURE_ITEMS.map(({ icon: Icon, text }) => (

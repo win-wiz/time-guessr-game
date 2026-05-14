@@ -38,9 +38,11 @@ const GameFeatures = memo(() => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900 dark:text-white">
-            Why Choose TimeGuessr?
+            What Makes TimeGuessr Unique?
           </h2>
           <p className="text-xl text-gray-600 dark:text-blue-200 max-w-4xl mx-auto">
+            TimeGuessr isn't just another location-guessing game. It's a comprehensive educational tool and a thrilling competitive platform. 
+            By combining geographical exploration with historical deduction, players develop a deeper understanding of how the world has evolved. 
             Experience the world like never before through our innovative time-based geography game that combines 
             education, entertainment, and exploration of global destinations with exciting time challenges.
           </p>

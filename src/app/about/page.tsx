@@ -36,68 +36,87 @@ export default function About() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="dark:bg-gray-800 light:bg-[#00205B] light:text-white light:border-[#001233] light:border-2">
             <CardHeader>
-              <CardTitle className="light:text-white">How to Play</CardTitle>
+              <CardTitle className="light:text-white">Our Mission & Vision</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
-                TimeGuessr is a game that tests your knowledge of Calgary's
-                streets and neighborhoods. You'll be shown images from around
-                the city, and your task is to guess where the photo was taken.
+                At TimeGuessr, our mission is to make geography and history accessible, engaging, and fun for everyone. 
+                We believe that learning about the world shouldn't be confined to textbooks. 
+                By gamifying the exploration of global locations across different eras, we aim to spark curiosity about our shared human heritage and the diverse landscapes that shape our planet.
               </p>
-
-              <ol className="list-decimal pl-5 space-y-2">
-                <li>You'll see a Calgary street scene</li>
-                <li>
-                  Use context clues like architecture, landmarks, and
-                  surroundings to guess the location
-                </li>
-                <li>Click on the map to place your guess</li>
-                <li>Submit your guess to see how close you were</li>
-                <li>Score is based on distance from actual location</li>
-                <li>Complete 5 rounds to finish a game</li>
-              </ol>
-
               <p>
-                The closer your guess, the more points you'll earn. A perfect
-                guess (within 100 meters) earns 5000 points. Points decrease
-                with distance, and guesses more than 2km away earn 0 points.
+                TimeGuessr challenges you to not only figure out <em>where</em> you are in the world, but <em>when</em> the photo was taken. 
+                This unique twist transforms a simple map game into a multidimensional puzzle. 
+                Players must analyze a myriad of clues: the style of architecture, the models of cars on the street, the fashion of the pedestrians, and even the quality of the photograph itself.
+              </p>
+              <p>
+                Whether you are a seasoned traveler, a history enthusiast, or someone looking to test their deductive reasoning, 
+                TimeGuessr provides an immersive platform to travel the globe and travel through time, all from the comfort of your screen.
               </p>
             </CardContent>
           </Card>
 
           <Card className="dark:bg-gray-800 light:bg-[#00205B] light:text-white light:border-[#001233] light:border-2">
             <CardHeader>
+              <CardTitle className="light:text-white">How to Play</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p>
+                TimeGuessr is a comprehensive game that tests your knowledge of global locations and historical timelines. 
+                You'll be shown images from around the world, and your task is to guess where the photo was taken and the year it was captured.
+              </p>
+
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>You'll see a historical or modern street scene from a random global location.</li>
+                <li>
+                  Use context clues like architecture, landmarks, vehicles, fashion, and photo quality to deduce the location and era.
+                </li>
+                <li>Click on the interactive map to place your location guess.</li>
+                <li>Use the timeline slider to select your guessed year.</li>
+                <li>Submit your guess to see how close you were in both distance and time.</li>
+                <li>Complete 5 rounds to finish a full game session and get your total score.</li>
+              </ol>
+
+              <p>
+                The closer your guesses, the more points you'll earn. A perfect location guess (within 50 meters) earns 5000 points. 
+                A perfect year guess earns additional bonus points. Points decrease exponentially with distance and time discrepancy.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="dark:bg-gray-800 light:bg-[#00205B] light:text-white light:border-[#001233] light:border-2 md:col-span-2">
+            <CardHeader>
               <CardTitle className="light:text-white">
-                About the Project
+                About the Project & Technology
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
-                This project uses several technologies to create an engaging
-                geographic guessing game:
+                TimeGuessr is built using modern web technologies to provide a seamless and interactive experience:
               </p>
 
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong>Google Street View API</strong> - To collect
-                  street-level imagery from around Calgary
-                </li>
-                {/* <li>
-                  <strong>YOLO Object Detection</strong> - To automatically detect and blur street signs
-                </li> */}
-                <li>
-                  <strong>Next.js</strong> - For the web application framework
+                  <strong>Google Street View & Maps API</strong> - To provide the core imagery and interactive map interface for location guessing.
                 </li>
                 <li>
-                  <strong>Google Maps</strong> - For the interactive map
-                  interface
+                  <strong>Next.js & React</strong> - Powering our fast, responsive, and SEO-friendly frontend architecture.
+                </li>
+                <li>
+                  <strong>Tailwind CSS</strong> - Ensuring a beautiful, mobile-responsive, and accessible user interface with dark mode support.
+                </li>
+                <li>
+                  <strong>AI-Curated Content</strong> - We leverage artificial intelligence to help curate interesting locations and challenging historical photos.
                 </li>
               </ul>
 
               <p className="mt-4">
-                The game focuses on downtown Calgary and surrounding
-                neighborhoods, including Chinatown, Eau Claire, Kensington,
-                Crescent Heights, East Village, Sunnyside and Beltline.
+                The game features thousands of hand-picked and AI-verified locations across all continents. 
+                From the bustling streets of modern Tokyo to historical archival photos of 1950s New York, 
+                every round is a new opportunity to learn and explore.
+              </p>
+              <p>
+                We are constantly updating our database with new locations and refining our scoring algorithms to ensure a fair and competitive environment for our global leaderboard.
               </p>
             </CardContent>
           </Card>
